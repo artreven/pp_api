@@ -79,3 +79,28 @@ select ?termUri ?name ?score where {{
         top_terms_scores[name] = score
         top_terms_uris[name] = term_uri
     return top_terms_scores, top_terms_uris
+
+
+all_data_q = """
+    select distinct * where {{
+      ?s ?p ?o
+    }}
+"""
+
+def query_sparql_endpoint(sparql_endpoint, graph_name, auth_data,
+                          query=all_data_q):
+    params = {
+        'default-graph-uri': '{}'.format(graph_name),
+        'query': query,
+        'format': 'json',
+    }
+    r = requests.get(sparql_endpoint, auth=auth_data, params=params)
+    if not r.status_code == 200:
+        print(r, r.status_code)
+        print(r.url)
+    assert r.status_code == 200
+    return r.json()['results']['bindings']
+
+
+if __name__ == '__main__':
+    pass
