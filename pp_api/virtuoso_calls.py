@@ -31,7 +31,6 @@ select ?uri1 ?uri2 ?score where {{
         'format': 'json',
     }
     r = requests.get('https://aligned-virtuoso.poolparty.biz/sparql',
-                     auth=('revenkoa', 'revenkpp'),
                      params=params)
     assert r.status_code == 200
     sim_matrix = dict()
@@ -68,7 +67,6 @@ select ?termUri ?name ?score where {{
         'format': 'json',
     }
     r = requests.get('https://aligned-virtuoso.poolparty.biz/sparql',
-                     auth=('revenkoa', 'revenkpp'),
                      params=params)
     top_terms_scores = dict()
     top_terms_uris = dict()
@@ -94,7 +92,7 @@ def query_sparql_endpoint(sparql_endpoint, graph_name, auth_data,
         'query': query,
         'format': 'json',
     }
-    r = requests.get(sparql_endpoint, auth=auth_data, params=params)
+    r = requests.get(sparql_endpoint, params=params)
     if not r.status_code == 200:
         print(r, r.status_code)
         print(r.url)
