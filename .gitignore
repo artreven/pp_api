@@ -3,3 +3,6 @@ __pycache__
 */migrations/
 dist/
 .idea
+
+/pp_api/server_data/*
+
