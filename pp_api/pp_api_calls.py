@@ -1,4 +1,5 @@
 import requests
+import tempfile
 
 
 def extract(text, pid, server, auth_data):
@@ -10,29 +11,35 @@ def extract(text, pid, server, auth_data):
     :param server: server url
     :return: response object
     """
-    data = {
-        'numberOfConcepts': 100000,
-        'numberOfTerms': 100000,
-        'text': text,
-        'projectId': pid,
-        'language': 'en',
-        'useTransitiveBroaderConcepts': True,
-        'useRelatedConcepts': True,
-        'sentimentAnalysis': True
-    }
-    r = requests.post(server + '/extractor/api/extract',
-                      auth=auth_data,
-                      data=data)
-    assert r.status_code == 200, print(data, '\n\n', r.status_code)
+    with tempfile.NamedTemporaryFile(mode='w+') as temp:
+        temp.write(text)
+        temp.seek(0)
+        data = {
+            'numberOfConcepts': 100000,
+            'numberOfTerms': 100000,
+            # 'text': text,
+            # 'file': temp.name,
+            'projectId': pid,
+            'language': 'en',
+            'useTransitiveBroaderConcepts': True,
+            'useRelatedConcepts': True,
+            'sentimentAnalysis': True
+        }
+        r = requests.post(server + '/extractor/api/extract',
+                          auth=auth_data,
+                          data=data,
+                          files={'file': temp})
+    assert r.status_code == 200, print(data, '\n\n',
+                                       r.status_code, '\n\n', r.text)
     return r
 
 
 def get_cpts_from_response(r):
     extr_cpts = []
-    if 'concepts' in r.json():
+    if 'concepts' in r.json()['document']:
         attributes = ['prefLabel', 'frequencyInDocument', 'uri',
                       'transitiveBroaderConcepts', 'relatedConcepts']
-        for cpt_json in r.json()['concepts']:
+        for cpt_json in r.json()['document']['concepts']:
             cpt = dict()
             for attr in attributes:
                 if attr in cpt_json:
@@ -47,9 +54,9 @@ def get_cpts_from_response(r):
 
 def get_terms_from_response(r):
     extr_terms = []
-    if 'extractedTerms' in r.json():
+    if 'extractedTerms' in r.json()['document']:
         attributes = ['textValue', 'frequencyInDocument', 'score']
-        for term_json in r.json()['extractedTerms']:
+        for term_json in r.json()['document']['extractedTerms']:
             term = dict()
             for attr in attributes:
                 if attr in term_json:
@@ -63,7 +70,8 @@ def get_terms_from_response(r):
 
 
 def get_sentiment_from_response(r):
-    return r.json()["sentiments"][0]["score"]
+    print(r.json()['document'])
+    return r.json()['document']["sentiments"][0]["score"]
 
 
 def get_prefLabels(uris, pid, server, auth_data):
