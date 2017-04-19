@@ -1,5 +1,4 @@
 import requests
-import tempfile
 
 
 def extract(text, pid, server, auth_data=None, session=None):
@@ -44,11 +43,7 @@ def extract(text, pid, server, auth_data=None, session=None):
                 data=data,
                 files={'file': ('.txt', text)}
             )
-    assert r.status_code == 200, print(data, '\n\n',
-                                       r.status_code, '\n\n',
-                                       r.text, '\n\n',
-                                       text, '\n',
-                                       len(text))
+    r.raise_for_status()
     return r
 
 
@@ -125,7 +120,7 @@ def get_prefLabels(uris, pid, server, auth_data=None, session=None):
                 server + '/PoolParty/api/thesaurus/{}/concepts'.format(pid),
                 params=data
             )
-    assert r.status_code == 200
+    r.raise_for_status()
     return [x['prefLabel'] for x in r.json()]
 
 
@@ -153,7 +148,7 @@ def get_cpt_corpus_freqs(corpus_id, server, pid, auth_data=None, session=None):
             r = requests.get(server + suffix,
                              auth=auth_data,
                              params=data)
-            assert r.status_code == 200
+            r.raise_for_status()
             data['startIndex'] += 20
             results += r.json()
             if not len(r.json()):
@@ -164,7 +159,7 @@ def get_cpt_corpus_freqs(corpus_id, server, pid, auth_data=None, session=None):
                 r = session.get(server + suffix,
                                 auth=auth_data,
                                 params=data)
-                assert r.status_code == 200
+                r.raise_for_status()
                 data['startIndex'] += 20
                 results += r.json()
                 if not len(r.json()):
@@ -173,7 +168,7 @@ def get_cpt_corpus_freqs(corpus_id, server, pid, auth_data=None, session=None):
             while True:
                 r = session.get(server + suffix,
                                 params=data)
-                assert r.status_code == 200
+                r.raise_for_status()
                 data['startIndex'] += 20
                 results += r.json()
                 if not len(r.json()):
@@ -200,14 +195,15 @@ def get_cpt_path(cpt_uri, server, pid, auth_data):
     r = requests.get(server + suffix,
                      auth=auth_data,
                      params=data)
-    assert r.status_code == 200
+    r.raise_for_status()
     broaders = [(x['uri'], x['prefLabel']) for x in r.json()[0]['conceptPath']]
     cpt_scheme = r.json()[0]['conceptScheme']
     result = [(cpt_scheme['uri'], cpt_scheme['title'])] + broaders
     return result
 
 
-def get_term_coocs(term_str, corpus_id, server, pid, auth_data=None, session=None):
+def get_term_coocs(term_str, corpus_id, server, pid,
+                   auth_data=None, session=None):
     suffix = '/PoolParty/api/corpusmanagement/' \
              '{pid}/results/cooccurrence/term'.format(
         pid=pid
@@ -225,7 +221,7 @@ def get_term_coocs(term_str, corpus_id, server, pid, auth_data=None, session=Non
             r = requests.get(server + suffix,
                              auth=auth_data,
                              params=data)
-            assert r.status_code == 200
+            r.raise_for_status()
             data['startIndex'] += 20
             results += r.json()
             if not len(r.json()):
@@ -236,7 +232,7 @@ def get_term_coocs(term_str, corpus_id, server, pid, auth_data=None, session=Non
                 r = session.get(server + suffix,
                                 auth=auth_data,
                                 params=data)
-                assert r.status_code == 200
+                r.raise_for_status()
                 data['startIndex'] += 20
                 results += r.json()
                 if not len(r.json()):
@@ -245,7 +241,7 @@ def get_term_coocs(term_str, corpus_id, server, pid, auth_data=None, session=Non
             while True:
                 r = session.get(server + suffix,
                                 params=data)
-                assert r.status_code == 200
+                r.raise_for_status()
                 data['startIndex'] += 20
                 results += r.json()
                 if not len(r.json()):
