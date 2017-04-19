@@ -2,7 +2,7 @@ import requests
 import tempfile
 
 
-def extract(text, pid, server, auth_data):
+def extract(text, pid, server, auth_data=None, session=None):
     """
     Make extract call using project determined by pid.
 
@@ -11,35 +11,53 @@ def extract(text, pid, server, auth_data):
     :param server: server url
     :return: response object
     """
-    with tempfile.NamedTemporaryFile(mode='w+') as temp:
-        temp.write(text)
-        temp.seek(0)
-        data = {
-            'numberOfConcepts': 100000,
-            'numberOfTerms': 100000,
-            # 'text': text,
-            # 'file': temp.name,
-            'projectId': pid,
-            'language': 'en',
-            'useTransitiveBroaderConcepts': True,
-            'useRelatedConcepts': True,
-            'sentimentAnalysis': True
-        }
-        r = requests.post(server + '/extractor/api/extract',
-                          auth=auth_data,
-                          data=data,
-                          files={'file': temp})
+    data = {
+        'numberOfConcepts': 100000,
+        'numberOfTerms': 100000,
+        'text': text,
+        # 'file': 'file',
+        'projectId': pid,
+        'language': 'en',
+        'useTransitiveBroaderConcepts': True,
+        'useRelatedConcepts': True,
+        'sentimentAnalysis': True
+    }
+    if session is None:
+        assert auth_data is not None
+        r = requests.request(
+            'POST', server + '/extractor/api/extract',
+            auth=auth_data,
+            data=data,
+            files={'file': ('.txt', text)}
+        )
+    else:
+        if auth_data is not None:
+            r = session.post(
+                server + '/extractor/api/extract',
+                auth=auth_data,
+                data=data,
+                files={'file': ('.txt', text)}
+            )
+        else:
+            r = session.post(
+                server + '/extractor/api/extract',
+                data=data,
+                files={'file': ('.txt', text)}
+            )
     assert r.status_code == 200, print(data, '\n\n',
-                                       r.status_code, '\n\n', r.text)
+                                       r.status_code, '\n\n',
+                                       r.text, '\n\n',
+                                       text, '\n',
+                                       len(text))
     return r
 
 
 def get_cpts_from_response(r):
     extr_cpts = []
-    if 'concepts' in r.json()['document']:
+    if 'concepts' in r.json():
         attributes = ['prefLabel', 'frequencyInDocument', 'uri',
                       'transitiveBroaderConcepts', 'relatedConcepts']
-        for cpt_json in r.json()['document']['concepts']:
+        for cpt_json in r.json()['concepts']:
             cpt = dict()
             for attr in attributes:
                 if attr in cpt_json:
@@ -54,9 +72,9 @@ def get_cpts_from_response(r):
 
 def get_terms_from_response(r):
     extr_terms = []
-    if 'extractedTerms' in r.json()['document']:
+    if 'extractedTerms' in r.json():
         attributes = ['textValue', 'frequencyInDocument', 'score']
-        for term_json in r.json()['document']['extractedTerms']:
+        for term_json in r.json()['extractedTerms']:
             term = dict()
             for attr in attributes:
                 if attr in term_json:
@@ -70,11 +88,10 @@ def get_terms_from_response(r):
 
 
 def get_sentiment_from_response(r):
-    print(r.json()['document'])
-    return r.json()['document']["sentiments"][0]["score"]
+    return r.json()["sentiments"][0]["score"]
 
 
-def get_prefLabels(uris, pid, server, auth_data):
+def get_prefLabels(uris, pid, server, auth_data=None, session=None):
     """
     Make extract call using project determined by pid.
 
@@ -88,15 +105,31 @@ def get_prefLabels(uris, pid, server, auth_data):
         'projectId': pid,
         'language': 'en',
     }
-    r = requests.get(server +
-                     '/PoolParty/api/thesaurus/{}/concepts'.format(pid),
-                     auth=auth_data,
-                     params=data)
+
+    if session is None:
+        assert auth_data is not None
+        r = requests.get(
+            server + '/PoolParty/api/thesaurus/{}/concepts'.format(pid),
+            auth=auth_data,
+            params=data
+        )
+    else:
+        if auth_data is not None:
+            r = session.get(
+                server + '/PoolParty/api/thesaurus/{}/concepts'.format(pid),
+                auth=auth_data,
+                params=data
+            )
+        else:
+            r = session.get(
+                server + '/PoolParty/api/thesaurus/{}/concepts'.format(pid),
+                params=data
+            )
     assert r.status_code == 200
     return [x['prefLabel'] for x in r.json()]
 
 
-def get_cpt_corpus_freqs(corpus_id, server, pid, auth_data):
+def get_cpt_corpus_freqs(corpus_id, server, pid, auth_data=None, session=None):
     """
     Make call to PP to extract frequencies of concepts in a corpus.
 
@@ -113,15 +146,39 @@ def get_cpt_corpus_freqs(corpus_id, server, pid, auth_data):
         pid=pid
     )
     results = []
-    while True:
-        r = requests.get(server + suffix,
-                         auth=auth_data,
-                         params=data)
-        assert r.status_code == 200
-        data['startIndex'] += 20
-        results += r.json()
-        if not len(r.json()):
-            break
+
+    if session is None:
+        assert auth_data is not None
+        while True:
+            r = requests.get(server + suffix,
+                             auth=auth_data,
+                             params=data)
+            assert r.status_code == 200
+            data['startIndex'] += 20
+            results += r.json()
+            if not len(r.json()):
+                break
+    else:
+        if auth_data is not None:
+            while True:
+                r = session.get(server + suffix,
+                                auth=auth_data,
+                                params=data)
+                assert r.status_code == 200
+                data['startIndex'] += 20
+                results += r.json()
+                if not len(r.json()):
+                    break
+        else:
+            while True:
+                r = session.get(server + suffix,
+                                params=data)
+                assert r.status_code == 200
+                data['startIndex'] += 20
+                results += r.json()
+                if not len(r.json()):
+                    break
+
     return results
 
 
@@ -150,31 +207,56 @@ def get_cpt_path(cpt_uri, server, pid, auth_data):
     return result
 
 
-def get_term_coocs(term, corpus_id, server, pid, auth_data):
+def get_term_coocs(term_str, corpus_id, server, pid, auth_data=None, session=None):
     suffix = '/PoolParty/api/corpusmanagement/' \
              '{pid}/results/cooccurrence/term'.format(
         pid=pid
     )
     data = {
         'corpusId': corpus_id,
-        'term': term,
+        'term': term_str,
         'startIndex': 0
     }
     results = []
-    while True:
-        r = requests.get(server + suffix,
-                         auth=auth_data,
-                         params=data)
-        assert r.status_code == 200
-        data['startIndex'] += 20
-        results += r.json()
-        if not len(r.json()):
-            break
+
+    if session is None:
+        assert auth_data is not None
+        while True:
+            r = requests.get(server + suffix,
+                             auth=auth_data,
+                             params=data)
+            assert r.status_code == 200
+            data['startIndex'] += 20
+            results += r.json()
+            if not len(r.json()):
+                break
+    else:
+        if auth_data is not None:
+            while True:
+                r = session.get(server + suffix,
+                                auth=auth_data,
+                                params=data)
+                assert r.status_code == 200
+                data['startIndex'] += 20
+                results += r.json()
+                if not len(r.json()):
+                    break
+        else:
+            while True:
+                r = session.get(server + suffix,
+                                params=data)
+                assert r.status_code == 200
+                data['startIndex'] += 20
+                results += r.json()
+                if not len(r.json()):
+                    break
+
     return results
 
 
 if __name__ == '__main__':
     import server_data.custom_apps as server_info
+    # import server_data.preview as server_info
     r = extract('dummy text', server_info.pid,
                 server_info.server, server_info.auth_data)
     print(r.status_code)
