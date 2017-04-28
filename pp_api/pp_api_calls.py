@@ -177,7 +177,7 @@ def get_cpt_corpus_freqs(corpus_id, server, pid, auth_data=None, session=None):
     return results
 
 
-def get_cpt_path(cpt_uri, server, pid, auth_data):
+def get_cpt_path(cpt_uri, server, pid, auth_data=None, session=None):
     """
     Make call to PP to extract path of concept.
 
@@ -192,9 +192,14 @@ def get_cpt_path(cpt_uri, server, pid, auth_data):
     suffix = '/PoolParty/api/thesaurus/{pid}/getPaths'.format(
         pid=pid
     )
-    r = requests.get(server + suffix,
-                     auth=auth_data,
-                     params=data)
+    if session is None:
+        assert auth_data is not None
+        r = requests.get(server + suffix,
+                         auth=auth_data,
+                         params=data)
+    else:
+        r = session.get(server + suffix,
+                        params=data)
     r.raise_for_status()
     broaders = [(x['uri'], x['prefLabel']) for x in r.json()[0]['conceptPath']]
     cpt_scheme = r.json()[0]['conceptScheme']
@@ -250,10 +255,143 @@ def get_term_coocs(term_str, corpus_id, server, pid,
     return results
 
 
+def get_projects(server, auth_data):
+    suffix = '/PoolParty/api/projects'
+    r = requests.get(server + suffix, auth=auth_data)
+    r.raise_for_status()
+    result = r.json()
+    return result
+
+
+def get_corpora(server, pid, auth_data):
+    suffix = '/PoolParty/api/corpusmanagement/{pid}/corpora'.format(pid=pid)
+    r = requests.get(server + suffix, auth=auth_data)
+    r.raise_for_status()
+    result = r.json()['jsonCorpusList']
+    return result
+
+
+def get_corpus_documents(corpus_id, pid, server, auth_data):
+    suffix = '/PoolParty/api/corpusmanagement/{pid}/documents'.format(pid=pid)
+    data = {
+        'corpusId': corpus_id,
+        'includeContent': True
+    }
+    r = requests.get(server + suffix, auth=auth_data, params=data)
+    r.raise_for_status()
+    result = r.json()
+    return result
+
+
+def get_document_terms(doc_id, corpus_id, pid, server, auth_data):
+    suffix = '/PoolParty/api/corpusmanagement/{pid}/documents/{docid}'.format(
+        pid=pid, docid=doc_id
+    )
+    data = {
+        'corpusId': corpus_id
+    }
+    r = requests.get(server + suffix, auth=auth_data, params=data)
+    r.raise_for_status()
+    result = r.json()
+    return result
+
+
+def get_allterms_scores(corpus_id, pid, server, auth_data=None, session=None):
+    suffix = '/PoolParty/api/corpusmanagement/{pid}/results/extractedterms'.format(
+        pid=pid
+    )
+    data = {
+        'corpusId': corpus_id,
+        'startIndex': 0
+    }
+    results = []
+
+    if session is None:
+        assert auth_data is not None
+        while True:
+            r = requests.get(server + suffix,
+                             auth=auth_data,
+                             params=data)
+            r.raise_for_status()
+            data['startIndex'] += 20
+            print(data['startIndex'])
+            results += r.json()
+            if not len(r.json()):
+                break
+    else:
+        if auth_data is not None:
+            while True:
+                r = session.get(server + suffix,
+                                auth=auth_data,
+                                params=data)
+                r.raise_for_status()
+                data['startIndex'] += 20
+                results += r.json()
+                if not len(r.json()):
+                    break
+        else:
+            while True:
+                r = session.get(server + suffix,
+                                params=data)
+                r.raise_for_status()
+                data['startIndex'] += 20
+                results += r.json()
+                if not len(r.json()):
+                    break
+    return results
+
+
+def get_terms_stats(corpus_id, pid, server, auth_data=None, session=None):
+    suffix = '/PoolParty/api/corpusmanagement/{pid}/results/extractedterms'.format(
+        pid=pid
+    )
+    data = {
+        'corpusId': corpus_id,
+        'startIndex': 0
+    }
+    results = []
+
+    if session is None:
+        assert auth_data is not None
+        while True:
+            r = requests.get(server + suffix,
+                             auth=auth_data,
+                             params=data)
+            r.raise_for_status()
+            data['startIndex'] += 20
+            results += r.json()
+            if not len(r.json()):
+                break
+    else:
+        if auth_data is not None:
+            while True:
+                r = session.get(server + suffix,
+                                auth=auth_data,
+                                params=data)
+                r.raise_for_status()
+                data['startIndex'] += 20
+                results += r.json()
+                if not len(r.json()):
+                    break
+        else:
+            while True:
+                r = session.get(server + suffix,
+                                params=data)
+                r.raise_for_status()
+                data['startIndex'] += 20
+                results += r.json()
+                if not len(r.json()):
+                    break
+
+    return results
+
+
 if __name__ == '__main__':
     import server_data.custom_apps as server_info
     # import server_data.preview as server_info
-    r = extract('dummy text', server_info.pid,
-                server_info.server, server_info.auth_data)
-    print(r.status_code)
-    print(r.json())
+    r = get_corpus_documents(
+        server_info.corpus_id, server_info.pid,
+        server_info.server, auth_data=server_info.auth_data
+    )
+    print(r)
+

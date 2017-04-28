@@ -1,4 +1,6 @@
 import requests
+import numpy as np
+import rdflib
 
 
 def get_corpus_zscores(term_uris, cooc_corpus_graph):
@@ -80,24 +82,64 @@ select ?termUri ?name ?score where {{
 
 
 all_data_q = """
-    select distinct * where {{
-      ?s ?p ?o
-    }}
+select distinct * where {{
+  ?s ?p ?o
+}}
 """
 
-def query_sparql_endpoint(sparql_endpoint, graph_name, auth_data,
+
+q_get_doc_text_by_doc_id = """
+select distinct * where {{
+    <{doc_id}> <http://schema.semantic-web.at/ppcm/2013/5/htmlText> ?o
+}}
+"""
+
+
+def query_sparql_endpoint(sparql_endpoint, graph_name,
                           query=all_data_q):
-    params = {
-        'default-graph-uri': '{}'.format(graph_name),
-        'query': query,
-        'format': 'json',
-    }
-    r = requests.get(sparql_endpoint, params=params)
-    if not r.status_code == 200:
-        print(r, r.status_code)
-        print(r.url)
-    assert r.status_code == 200
-    return r.json()['results']['bindings']
+    graph = rdflib.Graph('SPARQLStore', identifier=graph_name)
+    graph.open(sparql_endpoint)
+    rs = graph.query(query)
+    return rs
+
+
+def get_ridfs(sparql_endpoint, termsgraph):
+    q_term_scores = """
+    select distinct ?lemma ?ridf ?crs where {{
+        ?s <http://schema.semantic-web.at/ppcm/2013/5/textValue> ?lemma .
+        ?s <http://schema.semantic-web.at/ppcm/2013/5/ridfTermScore> ?ridf .
+        ?s <http://schema.semantic-web.at/ppcm/2013/5/combinedRelevanceScore> ?crs .
+    }}
+    """
+    rs = query_sparql_endpoint(sparql_endpoint, termsgraph, q_term_scores)
+    results = dict()
+    for r in rs:
+        results[str(r[0])] = float(r[2])
+    return results
+
+
+def query_cpt_cooc_scores(sparql_endpoint, cpt_cooc_graph):
+    q_cooc_score = """
+select distinct ?cpt1 ?cpt2 ?score where {{
+  ?cpt1 <http://schema.semantic-web.at/ppcm/2013/5/hasConceptCooccurrence> ?o .
+  ?o <http://schema.semantic-web.at/ppcm/2013/5/cooccurringExtractedConcept> ?cpt2 .
+  ?o <http://schema.semantic-web.at/ppcm/2013/5/score> ?score
+}}
+"""
+    rs = query_sparql_endpoint(sparql_endpoint, cpt_cooc_graph, q_cooc_score)
+    dist_mx = dict()
+    for r in rs:
+        cpt1 = str(r[0])
+        cpt2 = str(r[1])
+        if cpt1 in dist_mx:
+            dist_mx[cpt1][cpt2] = float(r[2])
+        else:
+            dist_mx[cpt1] = {cpt2: float(r[2])}
+        if cpt2 in dist_mx:
+            dist_mx[cpt2][cpt1] = float(r[2])
+        else:
+            dist_mx[cpt2] = {cpt1: float(r[2])}
+    return dist_mx
 
 
 if __name__ == '__main__':
