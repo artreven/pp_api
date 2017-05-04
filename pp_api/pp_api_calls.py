@@ -14,13 +14,14 @@ def extract(text, pid, server, auth_data=None, session=None):
         'numberOfConcepts': 100000,
         'numberOfTerms': 100000,
         'text': text,
-        # 'file': 'file',
+        #'file': 'file',
         'projectId': pid,
         'language': 'en',
         'useTransitiveBroaderConcepts': True,
         'useRelatedConcepts': True,
         'sentimentAnalysis': True
     }
+    #print("\n\n\n\n",server,data,text,"\n\n\n")
     if session is None:
         assert auth_data is not None
         r = requests.request(
@@ -48,38 +49,70 @@ def extract(text, pid, server, auth_data=None, session=None):
 
 
 def get_cpts_from_response(r):
-    extr_cpts = []
-    if 'concepts' in r.json():
-        attributes = ['prefLabel', 'frequencyInDocument', 'uri',
-                      'transitiveBroaderConcepts', 'relatedConcepts']
-        for cpt_json in r.json()['concepts']:
-            cpt = dict()
-            for attr in attributes:
-                if attr in cpt_json:
-                    cpt[attr] = cpt_json[attr]
-                else:
-                    cpt[attr] = []
-            extr_cpts.append(cpt)
-        return extr_cpts
-    else:
-        return extr_cpts
+	attributes = ['prefLabel', 'frequencyInDocument', 'uri',
+                  'transitiveBroaderConcepts', 'relatedConcepts']
+
+	extr_cpts = []
+	conceptContainer = r.json();
+
+	if not ('concepts' in conceptContainer):
+		if not 'document' in conceptContainer.keys():
+			return extr_cpts
+		if not ('concepts' in conceptContainer['document']):
+			#no mention of concepts either in the json directly or document inside
+			return extr_cpts
+		else:
+			#concepts are mentioned inside 'document'
+			conceptContainer = conceptContainer['document']
+
+	for cpt_json in conceptContainer['concepts']:
+		cpt = dict()
+		for attr in attributes:
+			if attr in cpt_json:
+				cpt[attr] = cpt_json[attr]
+			else:
+				cpt[attr] = []
+		extr_cpts.append(cpt)
+
+
+	return extr_cpts
+
 
 
 def get_terms_from_response(r):
-    extr_terms = []
-    if 'extractedTerms' in r.json():
-        attributes = ['textValue', 'frequencyInDocument', 'score']
-        for term_json in r.json()['extractedTerms']:
-            term = dict()
-            for attr in attributes:
-                if attr in term_json:
-                    term[attr] = term_json[attr]
-                else:
-                    term[attr] = []
-            extr_terms.append(term)
-        return extr_terms
-    else:
-        return extr_terms
+	attributes = ['textValue', 'frequencyInDocument', 'score']
+	extr_terms = []
+	termContainer = r.json()
+
+	found = False;
+	for termKeyWord in ['freeTerms','extractedTerms']:
+		if termKeyWord in termContainer:
+			found = True
+			break
+		if not 'document' in termContainer.keys():
+			found = False
+			break
+		if termKeyWord in termContainer['document']:
+			termContainer = termContainer['document']
+			found = True
+			break
+
+	if not found:
+		return extr_terms
+
+
+	for term_json in termContainer[termKeyWord]:
+	    term = dict()
+	    for attr in attributes:
+	        if attr in term_json:
+	        	term[attr] = term_json[attr]
+	        else:
+	            term[attr] = []
+	    extr_terms.append(term)
+
+
+	return extr_terms
+
 
 
 def get_sentiment_from_response(r):
@@ -394,4 +427,3 @@ if __name__ == '__main__':
         server_info.server, auth_data=server_info.auth_data
     )
     print(r)
-
