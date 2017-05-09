@@ -1,3 +1,5 @@
+import sys
+
 import requests
 
 
@@ -216,41 +218,27 @@ def get_term_coocs(term_str, corpus_id, server, pid,
     data = {
         'corpusId': corpus_id,
         'term': term_str,
-        'startIndex': 0
+        'startIndex': 0,
+        'limit': 2**15, #int(sys.maxsize)
     }
     results = []
 
     if session is None:
         assert auth_data is not None
-        while True:
-            r = requests.get(server + suffix,
-                             auth=auth_data,
-                             params=data)
-            r.raise_for_status()
-            data['startIndex'] += 20
-            results += r.json()
+        session = requests.session()
+    if auth_data is not None:
+        session.auth = auth_data
+    while True:
+        r = session.get(server + suffix,
+                        params=data)
+        r.raise_for_status()
+        results += r.json()
+        if len(r.json()) == 20:
+            data['startIndex'] += len(r.json())
             if not len(r.json()):
                 break
-    else:
-        if auth_data is not None:
-            while True:
-                r = session.get(server + suffix,
-                                auth=auth_data,
-                                params=data)
-                r.raise_for_status()
-                data['startIndex'] += 20
-                results += r.json()
-                if not len(r.json()):
-                    break
         else:
-            while True:
-                r = session.get(server + suffix,
-                                params=data)
-                r.raise_for_status()
-                data['startIndex'] += 20
-                results += r.json()
-                if not len(r.json()):
-                    break
+            break
 
     return results
 
