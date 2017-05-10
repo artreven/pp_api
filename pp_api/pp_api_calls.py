@@ -3,7 +3,7 @@ import sys
 import requests
 
 
-def extract(text, pid, server, auth_data=None, session=None):
+def extract(text, pid, server, auth_data=None, session=None, **kwargs):
     """
     Make extract call using project determined by pid.
 
@@ -23,7 +23,7 @@ def extract(text, pid, server, auth_data=None, session=None):
         'useRelatedConcepts': True,
         'sentimentAnalysis': True
     }
-    #print("\n\n\n\n",server,data,text,"\n\n\n")
+    data.update(kwargs)
     if session is None:
         assert auth_data is not None
         r = requests.request(
@@ -51,77 +51,72 @@ def extract(text, pid, server, auth_data=None, session=None):
 
 
 def get_cpts_from_response(r):
-	attributes = ['prefLabel', 'frequencyInDocument', 'uri',
+    attributes = ['prefLabel', 'frequencyInDocument', 'uri',
                   'transitiveBroaderConcepts', 'relatedConcepts']
 
-	extr_cpts = []
-	conceptContainer = r.json();
+    extr_cpts = []
+    concept_container = r.json()
 
-	if not ('concepts' in conceptContainer):
-		if not 'document' in conceptContainer.keys():
-			return extr_cpts
-		if not ('concepts' in conceptContainer['document']):
-			#no mention of concepts either in the json directly or document inside
-			return extr_cpts
-		else:
-			#concepts are mentioned inside 'document'
-			conceptContainer = conceptContainer['document']
+    if not 'concepts' in concept_container:
+        if not 'document' in concept_container:
+            return extr_cpts
+        if not 'concepts' in concept_container['document']:
+            #no mention of concepts either in the json directly or document inside
+            return extr_cpts
+        else:
+            #concepts are mentioned inside 'document'
+            concept_container = concept_container['document']
 
-	for cpt_json in conceptContainer['concepts']:
-		cpt = dict()
-		for attr in attributes:
-			if attr in cpt_json:
-				cpt[attr] = cpt_json[attr]
-			else:
-				cpt[attr] = []
-		extr_cpts.append(cpt)
+    for cpt_json in concept_container['concepts']:
+        cpt = dict()
+        for attr in attributes:
+            if attr in cpt_json:
+                cpt[attr] = cpt_json[attr]
+            else:
+                cpt[attr] = []
+        extr_cpts.append(cpt)
 
-
-	return extr_cpts
+    return extr_cpts
 
 
 
 def get_terms_from_response(r):
-	attributes = ['textValue', 'frequencyInDocument', 'score']
-	extr_terms = []
-	termContainer = r.json()
+    attributes = ['textValue', 'frequencyInDocument', 'score']
+    extr_terms = []
+    term_container = r.json()
 
-	found = False;
-	for termKeyWord in ['freeTerms','extractedTerms']:
-		if termKeyWord in termContainer:
-			found = True
-			break
-		if not 'document' in termContainer.keys():
-			found = False
-			break
-		if termKeyWord in termContainer['document']:
-			termContainer = termContainer['document']
-			found = True
-			break
+    found = False
+    for term_key_word in ['freeTerms', 'extractedTerms']:
+        if term_key_word in term_container:
+            found = True
+            break
+        if not 'document' in term_container:
+            found = False
+            break
+        if term_key_word in term_container['document']:
+            term_container = term_container['document']
+            found = True
+            break
 
-	if not found:
-		return extr_terms
+    assert found, extr_terms
 
+    for term_json in term_container[term_key_word]:
+        term = dict()
+        for attr in attributes:
+            if attr in term_json:
+                term[attr] = term_json[attr]
+            else:
+                term[attr] = []
+        extr_terms.append(term)
 
-	for term_json in termContainer[termKeyWord]:
-	    term = dict()
-	    for attr in attributes:
-	        if attr in term_json:
-	        	term[attr] = term_json[attr]
-	        else:
-	            term[attr] = []
-	    extr_terms.append(term)
-
-
-	return extr_terms
-
+    return extr_terms
 
 
 def get_sentiment_from_response(r):
     return r.json()["sentiments"][0]["score"]
 
 
-def get_prefLabels(uris, pid, server, auth_data=None, session=None):
+def get_pref_labels(uris, pid, server, auth_data=None, session=None):
     """
     Make extract call using project determined by pid.
 
