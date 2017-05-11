@@ -3,6 +3,15 @@ import sys
 import requests
 
 
+def get_session(session, auth_data):
+    if session is None:
+        assert auth_data is not None
+        session = requests.session()
+    if auth_data is not None:
+        session.auth = auth_data
+    return session
+
+
 def extract(text, pid, server, auth_data=None, session=None, **kwargs):
     """
     Make extract call using project determined by pid.
@@ -16,7 +25,6 @@ def extract(text, pid, server, auth_data=None, session=None, **kwargs):
         'numberOfConcepts': 100000,
         'numberOfTerms': 100000,
         'text': text,
-        #'file': 'file',
         'projectId': pid,
         'language': 'en',
         'useTransitiveBroaderConcepts': True,
@@ -24,28 +32,12 @@ def extract(text, pid, server, auth_data=None, session=None, **kwargs):
         'sentimentAnalysis': True
     }
     data.update(kwargs)
-    if session is None:
-        assert auth_data is not None
-        r = requests.request(
-            'POST', server + '/extractor/api/extract',
-            auth=auth_data,
-            data=data,
-            files={'file': ('.txt', text)}
-        )
-    else:
-        if auth_data is not None:
-            r = session.post(
-                server + '/extractor/api/extract',
-                auth=auth_data,
-                data=data,
-                files={'file': ('.txt', text)}
-            )
-        else:
-            r = session.post(
-                server + '/extractor/api/extract',
-                data=data,
-                files={'file': ('.txt', text)}
-            )
+    session = get_session(session, auth_data)
+    r = session.post(
+        server + '/extractor/api/extract',
+        data=data,
+        files={'file': ('.txt', text)}
+    )
     r.raise_for_status()
     return r
 
@@ -78,6 +70,34 @@ def get_cpts_from_response(r):
 
     return extr_cpts
 
+
+def get_shadow_cpts_from_response(r):
+    attributes = ['prefLabel', 'uri',
+                  'transitiveBroaderConcepts', 'corporaScore']
+
+    shadow_cpts = []
+    concept_container = r.json()
+
+    if not 'shadowConcepts' in concept_container:
+        if not 'document' in concept_container:
+            return shadow_cpts
+        if not 'shadowConcepts' in concept_container['document']:
+            #no mention of concepts either in the json directly or document inside
+            return shadow_cpts
+        else:
+            #concepts are mentioned inside 'document'
+            concept_container = concept_container['document']
+
+    for cpt_json in concept_container['shadowConcepts']:
+        cpt = dict()
+        for attr in attributes:
+            if attr in cpt_json:
+                cpt[attr] = cpt_json[attr]
+            else:
+                cpt[attr] = []
+        shadow_cpts.append(cpt)
+
+    return shadow_cpts
 
 
 def get_terms_from_response(r):
@@ -130,26 +150,11 @@ def get_pref_labels(uris, pid, server, auth_data=None, session=None):
         'projectId': pid,
         'language': 'en',
     }
-
-    if session is None:
-        assert auth_data is not None
-        r = requests.get(
-            server + '/PoolParty/api/thesaurus/{}/concepts'.format(pid),
-            auth=auth_data,
-            params=data
-        )
-    else:
-        if auth_data is not None:
-            r = session.get(
-                server + '/PoolParty/api/thesaurus/{}/concepts'.format(pid),
-                auth=auth_data,
-                params=data
-            )
-        else:
-            r = session.get(
-                server + '/PoolParty/api/thesaurus/{}/concepts'.format(pid),
-                params=data
-            )
+    session = get_session(session, auth_data)
+    r = session.get(
+        server + '/PoolParty/api/thesaurus/{}/concepts'.format(pid),
+        params=data
+    )
     r.raise_for_status()
     return [x['prefLabel'] for x in r.json()]
 
@@ -171,39 +176,15 @@ def get_cpt_corpus_freqs(corpus_id, server, pid, auth_data=None, session=None):
         pid=pid
     )
     results = []
-
-    if session is None:
-        assert auth_data is not None
-        while True:
-            r = requests.get(server + suffix,
-                             auth=auth_data,
-                             params=data)
-            r.raise_for_status()
-            data['startIndex'] += 20
-            results += r.json()
-            if not len(r.json()):
-                break
-    else:
-        if auth_data is not None:
-            while True:
-                r = session.get(server + suffix,
-                                auth=auth_data,
-                                params=data)
-                r.raise_for_status()
-                data['startIndex'] += 20
-                results += r.json()
-                if not len(r.json()):
-                    break
-        else:
-            while True:
-                r = session.get(server + suffix,
-                                params=data)
-                r.raise_for_status()
-                data['startIndex'] += 20
-                results += r.json()
-                if not len(r.json()):
-                    break
-
+    session = get_session(session, auth_data)
+    while True:
+        r = session.get(server + suffix,
+                        params=data)
+        r.raise_for_status()
+        data['startIndex'] += 20
+        results += r.json()
+        if not len(r.json()):
+            break
     return results
 
 
@@ -222,14 +203,8 @@ def get_cpt_path(cpt_uri, server, pid, auth_data=None, session=None):
     suffix = '/PoolParty/api/thesaurus/{pid}/getPaths'.format(
         pid=pid
     )
-    if session is None:
-        assert auth_data is not None
-        r = requests.get(server + suffix,
-                         auth=auth_data,
-                         params=data)
-    else:
-        r = session.get(server + suffix,
-                        params=data)
+    session = get_session(session, auth_data)
+    r = session.get(server + suffix, params=data)
     r.raise_for_status()
     broaders = [(x['uri'], x['prefLabel']) for x in r.json()[0]['conceptPath']]
     cpt_scheme = r.json()[0]['conceptScheme']
@@ -251,11 +226,7 @@ def get_term_coocs(term_str, corpus_id, server, pid,
     }
     results = []
 
-    if session is None:
-        assert auth_data is not None
-        session = requests.session()
-    if auth_data is not None:
-        session.auth = auth_data
+    session = get_session(session, auth_data)
     while True:
         r = session.get(server + suffix,
                         params=data)
@@ -321,39 +292,15 @@ def get_allterms_scores(corpus_id, pid, server, auth_data=None, session=None):
         'startIndex': 0
     }
     results = []
-
-    if session is None:
-        assert auth_data is not None
-        while True:
-            r = requests.get(server + suffix,
-                             auth=auth_data,
-                             params=data)
-            r.raise_for_status()
-            data['startIndex'] += 20
-            print(data['startIndex'])
-            results += r.json()
-            if not len(r.json()):
-                break
-    else:
-        if auth_data is not None:
-            while True:
-                r = session.get(server + suffix,
-                                auth=auth_data,
-                                params=data)
-                r.raise_for_status()
-                data['startIndex'] += 20
-                results += r.json()
-                if not len(r.json()):
-                    break
-        else:
-            while True:
-                r = session.get(server + suffix,
-                                params=data)
-                r.raise_for_status()
-                data['startIndex'] += 20
-                results += r.json()
-                if not len(r.json()):
-                    break
+    session = get_session(session, auth_data)
+    while True:
+        r = session.get(server + suffix,
+                        params=data)
+        r.raise_for_status()
+        data['startIndex'] += 20
+        results += r.json()
+        if not len(r.json()):
+            break
     return results
 
 
@@ -366,39 +313,15 @@ def get_terms_stats(corpus_id, pid, server, auth_data=None, session=None):
         'startIndex': 0
     }
     results = []
-
-    if session is None:
-        assert auth_data is not None
-        while True:
-            r = requests.get(server + suffix,
-                             auth=auth_data,
-                             params=data)
-            r.raise_for_status()
-            data['startIndex'] += 20
-            results += r.json()
-            if not len(r.json()):
-                break
-    else:
-        if auth_data is not None:
-            while True:
-                r = session.get(server + suffix,
-                                auth=auth_data,
-                                params=data)
-                r.raise_for_status()
-                data['startIndex'] += 20
-                results += r.json()
-                if not len(r.json()):
-                    break
-        else:
-            while True:
-                r = session.get(server + suffix,
-                                params=data)
-                r.raise_for_status()
-                data['startIndex'] += 20
-                results += r.json()
-                if not len(r.json()):
-                    break
-
+    session = get_session(session, auth_data)
+    while True:
+        r = session.get(server + suffix,
+                        params=data)
+        r.raise_for_status()
+        data['startIndex'] += 20
+        results += r.json()
+        if not len(r.json()):
+            break
     return results
 
 
