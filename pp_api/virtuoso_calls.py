@@ -55,13 +55,13 @@ select ?uri1 ?uri2 ?score where {{
     return similarity
 
 
-def get_pp_terms(corpus_graph_terms, CRS_threshold=5):
+def get_pp_terms(corpus_graph_terms, crs_threshold=5):
     """
     Load all terms with combinedRelevanceScore is greater than CRS_threshold
     from the graph corpus_graph_terms.
 
     :param corpus_graph_terms: uri of the graph
-    :param CRS_threshold: min combinedRelevanceScore of term to be returned
+    :param crs_threshold: min combinedRelevanceScore of term to be returned
     :return:
     """
     params = {
@@ -71,7 +71,7 @@ select ?termUri ?name ?score where {{
   ?termUri <http://schema.semantic-web.at/ppcm/2013/5/combinedRelevanceScore> ?score .
   ?termUri <http://schema.semantic-web.at/ppcm/2013/5/name> ?name .
   filter (?score > {})
-}} order by desc(?score)""".format(CRS_threshold),
+}} order by desc(?score)""".format(crs_threshold),
         'format': 'json',
     }
     r = requests.get('https://aligned-virtuoso.poolparty.biz/sparql',

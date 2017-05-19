@@ -5,4 +5,5 @@ setup(
     version='0.1dev',
     packages=['pp_api',],
     license='MIT',
+    requires=['requests', 'numpy', 'rdflib']
 )
