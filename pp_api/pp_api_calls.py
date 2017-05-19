@@ -1,21 +1,14 @@
-import sys
-
 import requests
 
-
-def get_session(session, auth_data):
-    if session is None:
-        assert auth_data is not None
-        session = requests.session()
-    if auth_data is not None:
-        session.auth = auth_data
-    return session
+import utils as u
 
 
 def extract(text, pid, server, auth_data=None, session=None, **kwargs):
     """
     Make extract call using project determined by pid.
 
+    :param auth_data: 
+    :param session: 
     :param text: text
     :param pid: id of project
     :param server: server url
@@ -32,7 +25,7 @@ def extract(text, pid, server, auth_data=None, session=None, **kwargs):
         'sentimentAnalysis': True
     }
     data.update(kwargs)
-    session = get_session(session, auth_data)
+    session = u.get_session(session, auth_data)
     r = session.post(
         server + '/extractor/api/extract',
         data=data,
@@ -110,15 +103,12 @@ def get_terms_from_response(r):
         if term_key_word in term_container:
             found = True
             break
-        if not 'document' in term_container:
-            found = False
-            break
-        if term_key_word in term_container['document']:
+        elif 'document' in term_container and term_key_word in term_container['document']:
             term_container = term_container['document']
             found = True
             break
 
-    assert found, extr_terms
+    assert found, [extr_terms, list(term_container.keys())]
 
     for term_json in term_container[term_key_word]:
         term = dict()
@@ -140,7 +130,9 @@ def get_pref_labels(uris, pid, server, auth_data=None, session=None):
     """
     Make extract call using project determined by pid.
 
-    :param text: text
+    :param uris: 
+    :param auth_data: 
+    :param session: 
     :param pid: id of project
     :param server: server url
     :return: response object
@@ -150,7 +142,7 @@ def get_pref_labels(uris, pid, server, auth_data=None, session=None):
         'projectId': pid,
         'language': 'en',
     }
-    session = get_session(session, auth_data)
+    session = u.get_session(session, auth_data)
     r = session.get(
         server + '/PoolParty/api/thesaurus/{}/concepts'.format(pid),
         params=data
@@ -163,6 +155,8 @@ def get_cpt_corpus_freqs(corpus_id, server, pid, auth_data=None, session=None):
     """
     Make call to PP to extract frequencies of concepts in a corpus.
 
+    :param auth_data: 
+    :param session: 
     :param corpus_id: corpus id
     :param pid: id of project
     :param server: server url
@@ -176,10 +170,9 @@ def get_cpt_corpus_freqs(corpus_id, server, pid, auth_data=None, session=None):
         pid=pid
     )
     results = []
-    session = get_session(session, auth_data)
+    session = u.get_session(session, auth_data)
     while True:
-        r = session.get(server + suffix,
-                        params=data)
+        r = session.get(server + suffix, params=data)
         r.raise_for_status()
         data['startIndex'] += 20
         results += r.json()
@@ -192,7 +185,9 @@ def get_cpt_path(cpt_uri, server, pid, auth_data=None, session=None):
     """
     Make call to PP to extract path of concept.
 
-    :param corpus_id: corpus id
+    :param cpt_uri: 
+    :param auth_data: 
+    :param session: 
     :param pid: id of project
     :param server: server url
     :return: response object
@@ -203,7 +198,7 @@ def get_cpt_path(cpt_uri, server, pid, auth_data=None, session=None):
     suffix = '/PoolParty/api/thesaurus/{pid}/getPaths'.format(
         pid=pid
     )
-    session = get_session(session, auth_data)
+    session = u.get_session(session, auth_data)
     r = session.get(server + suffix, params=data)
     r.raise_for_status()
     broaders = [(x['uri'], x['prefLabel']) for x in r.json()[0]['conceptPath']]
@@ -226,7 +221,7 @@ def get_term_coocs(term_str, corpus_id, server, pid,
     }
     results = []
 
-    session = get_session(session, auth_data)
+    session = u.get_session(session, auth_data)
     while True:
         r = session.get(server + suffix,
                         params=data)
@@ -292,7 +287,7 @@ def get_allterms_scores(corpus_id, pid, server, auth_data=None, session=None):
         'startIndex': 0
     }
     results = []
-    session = get_session(session, auth_data)
+    session = u.get_session(session, auth_data)
     while True:
         r = session.get(server + suffix,
                         params=data)
@@ -313,7 +308,7 @@ def get_terms_stats(corpus_id, pid, server, auth_data=None, session=None):
         'startIndex': 0
     }
     results = []
-    session = get_session(session, auth_data)
+    session = u.get_session(session, auth_data)
     while True:
         r = session.get(server + suffix,
                         params=data)
@@ -328,8 +323,11 @@ def get_terms_stats(corpus_id, pid, server, auth_data=None, session=None):
 if __name__ == '__main__':
     import server_data.custom_apps as server_info
     # import server_data.preview as server_info
+    username = input('Username: ')
+    pw = input('Password: ')
+    auth_data = (username, pw)
     r = get_corpus_documents(
         server_info.corpus_id, server_info.pid,
-        server_info.server, auth_data=server_info.auth_data
+        server_info.server, auth_data=auth_data
     )
     print(r)

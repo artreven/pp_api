@@ -44,8 +44,6 @@ select ?uri1 ?uri2 ?score where {{
                      params=params)
     assert r.status_code == 200
     sim_matrix = dict()
-    c1 = 0
-    c2 = 0
     for binding in r.json()['results']['bindings']:
         uri1 = binding['uri1']['value']
         uri2 = binding['uri2']['value']

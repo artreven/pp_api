@@ -4,5 +4,4 @@ __pycache__
 dist/
 .idea
 
-/pp_api/server_data/*
 
