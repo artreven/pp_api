@@ -1,4 +1,4 @@
-import utils as u
+from pp_api import utils as u
 
 
 def create(id_, title, author, server, auth_data=None, session=None, **kwargs):
