@@ -1,6 +1,6 @@
 import requests
 
-import utils as u
+from pp_api import utils as u
 
 
 def extract(text, pid, server, auth_data=None, session=None, **kwargs):
