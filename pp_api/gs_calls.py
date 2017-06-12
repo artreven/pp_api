@@ -8,8 +8,7 @@ def create(id_, title, author, server, auth_data=None, session=None, **kwargs):
     data = {
         'identifier': id_,
         'title': title,
-        'author': author,
-        'facets': {"dyn_txt_wholetext": ["some text"]}
+        'author': author
     }
     data.update(kwargs)
     session = u.get_session(session, auth_data)
