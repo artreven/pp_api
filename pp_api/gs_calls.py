@@ -1,3 +1,5 @@
+from requests.exceptions import HTTPError
+
 from pp_api import utils as u
 
 
@@ -15,7 +17,11 @@ def create(id_, title, author, server, auth_data=None, session=None, **kwargs):
         server + suffix,
         json=data,
     )
-    r.raise_for_status()
+    try:
+        r.raise_for_status()
+    except HTTPError as e:
+        print(r.text)
+        raise e
     return r
 
 
