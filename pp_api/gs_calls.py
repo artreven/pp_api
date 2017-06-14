@@ -68,10 +68,9 @@ def search(server, auth_data=None, session=None, **kwargs):
 if __name__ == '__main__':
     import server_data.profit as profit_info
     import virtuoso_calls as vc
-    # username = input('Username: ')
-    # pw = input('Password: ')
-    # auth_data = (username, pw)
-    auth_data = ('revenkoa', 'revenkpp')
+    username = input('Username: ')
+    pw = input('Password: ')
+    auth_data = (username, pw)
 
     ###
     search_filters = [
