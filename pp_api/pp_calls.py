@@ -1,4 +1,5 @@
 import requests
+from requests.exceptions import HTTPError
 
 from pp_api import utils as u
 
@@ -31,7 +32,12 @@ def extract(text, pid, server, auth_data=None, session=None, **kwargs):
         data=data,
         files={'file': ('.txt', text)}
     )
-    r.raise_for_status()
+    try:
+        r.raise_for_status()
+    except HTTPError as e:
+        print(r.text)
+        print(text)
+        raise e
     return r
 
 

@@ -9,7 +9,7 @@ ld_graphs = {
     'http://rssfeeds.usatoday.com/usatodaycommoney-topstories&x=1': ['text', 'title', 'title'],
     'https://us.spindices.com/rss': ['text', 'title', 'title'],
     'http://www.ecb.europa.eu/home/html/rss': ['text', 'title', 'title'],
-    'https://www.washingtonpost.com/news/get-there/feed/': ['text', 'title', 'title'],  # any texts???
+    'http://www.washingtonpost.com/news/get-there/feed/': ['text', 'title', 'title'],  # any texts???
     'http://rss.cnn.com/rss/money_pf': ['text', 'title', 'title'],
     'http://rss.cnn.com/rss/money_autos': ['text', 'title', 'title'],
     'http://rss.cnn.com/rss/money_funds': ['text', 'title', 'title'],
