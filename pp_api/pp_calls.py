@@ -198,6 +198,8 @@ def get_cpt_path(cpt_uri, server, pid, auth_data=None, session=None):
     :param server: server url
     :return: response object
     """
+
+    cpt_uri = str(cpt_uri)
     data = {
         'concept': cpt_uri
     }
