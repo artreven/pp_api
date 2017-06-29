@@ -326,6 +326,21 @@ def get_terms_stats(corpus_id, pid, server, auth_data=None, session=None):
     return results
 
 
+def export_project(pid, server, auth_data=None, session=None):
+    suffix = '/PoolParty/api/projects/{pid}/export'.format(
+        pid=pid
+    )
+    rdf_format = 'N3'
+    data = {
+        'format': rdf_format,
+        'exportModules': ['concepts']
+    }
+    session = u.get_session(session, auth_data)
+    r = session.get(server + suffix, params=data)
+    r.raise_for_status()
+    return r.content
+
+
 if __name__ == '__main__':
     import server_data.custom_apps as server_info
     # import server_data.preview as server_info
@@ -336,4 +351,15 @@ if __name__ == '__main__':
         server_info.corpus_id, server_info.pid,
         server_info.server, auth_data=auth_data
     )
+    print(len(r))
+    r = export_project(
+        pid=server_info.pid,
+        server=server_info.server,
+        auth_data=auth_data
+    )
     print(r)
+
+    import rdflib
+    g = rdflib.Graph()
+    g.parse(data=r, format='n3')
+
