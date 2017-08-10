@@ -104,7 +104,7 @@ select distinct * where {{
 def query_sparql_endpoint(sparql_endpoint, graph_name,
                           query=all_data_q):
     graph = rdflib.Graph('SPARQLStore', identifier=graph_name)
-    graph.open(sparql_endpoint)
+    rt = graph.open(sparql_endpoint)
     rs = graph.query(query)
     return rs
 

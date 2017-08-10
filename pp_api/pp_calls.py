@@ -1,5 +1,6 @@
 import requests
 from requests.exceptions import HTTPError
+import urllib.parse
 
 from pp_api import utils as u
 
@@ -18,7 +19,7 @@ def extract(text, pid, server, auth_data=None, session=None, **kwargs):
     data = {
         'numberOfConcepts': 100000,
         'numberOfTerms': 100000,
-        'text': text,
+        # 'text': text,
         'projectId': pid,
         'language': 'en',
         'useTransitiveBroaderConcepts': True,
@@ -27,11 +28,16 @@ def extract(text, pid, server, auth_data=None, session=None, **kwargs):
     }
     data.update(kwargs)
     session = u.get_session(session, auth_data)
+    # from time import time
+    # start = time()
+    quoted_text = urllib.parse.quote_plus(text)
+    # print('quote took {:0.3f}'.format(time() - start))
     r = session.post(
         server + '/extractor/api/extract',
         data=data,
-        files={'file': ('.txt', text)}
+        files={'file': ('.txt', quoted_text)}
     )
+    # print('call took {:0.3f}'.format(time() - start))
     try:
         r.raise_for_status()
     except HTTPError as e:
@@ -114,7 +120,7 @@ def get_terms_from_response(r):
             found = True
             break
 
-    assert found, [extr_terms, list(term_container.keys())]
+    assert found, [extr_terms, list(term_container.keys()), r.json()]
 
     for term_json in term_container[term_key_word]:
         term = dict()
