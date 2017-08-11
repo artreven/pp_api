@@ -1,11 +1,18 @@
 import requests
 from requests.exceptions import HTTPError
-import urllib.parse
+from requests.packages.urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
+import tempfile
+import logging
+from time import time
 
 from pp_api import utils as u
 
+logger = logging.getLogger(__name__)
 
-def extract(text, pid, server, auth_data=None, session=None, **kwargs):
+
+def extract(text, pid, server, auth_data=None, session=None, max_retries=None,
+            **kwargs):
     """
     Make extract call using project determined by pid.
 
@@ -16,10 +23,29 @@ def extract(text, pid, server, auth_data=None, session=None, **kwargs):
     :param server: server url
     :return: response object
     """
+    tmp_file = tempfile.NamedTemporaryFile(delete=False, mode='w+')
+    tmp_file.write(str(text))
+    tmp_file.seek(0)
+    return extract_from_file(tmp_file, pid, server, auth_data, session,
+                             max_retries,
+                             **kwargs)
+
+
+def extract_from_file(file, pid, server, auth_data=None, session=None,
+                      max_retries=None, **kwargs):
+    """
+    Make extract call using project determined by pid.
+
+    :param auth_data:
+    :param session:
+    :param text: text
+    :param pid: id of project
+    :param server: server url
+    :return: response object
+    """
     data = {
         'numberOfConcepts': 100000,
         'numberOfTerms': 100000,
-        # 'text': text,
         'projectId': pid,
         'language': 'en',
         'useTransitiveBroaderConcepts': True,
@@ -28,21 +54,26 @@ def extract(text, pid, server, auth_data=None, session=None, **kwargs):
     }
     data.update(kwargs)
     session = u.get_session(session, auth_data)
-    # from time import time
-    # start = time()
-    quoted_text = urllib.parse.quote_plus(text)
-    # print('quote took {:0.3f}'.format(time() - start))
+    target_url = server + '/extractor/api/extract'
+    start = time()
+    if not hasattr(file, 'read'):
+        file = open(file, 'rb')
+    if max_retries is not None:
+        retries = Retry(total=max_retries,
+                        backoff_factor=0.3,
+                        status_forcelist=[500, 502, 503, 504])
+        session.mount(server, HTTPAdapter(max_retries=retries))
     r = session.post(
-        server + '/extractor/api/extract',
+        target_url,
         data=data,
-        files={'file': ('.txt', quoted_text)}
+        files={'file': file},
+        timeout=(3.05, 27)
     )
-    # print('call took {:0.3f}'.format(time() - start))
+    logger.debug('call took {:0.3f}'.format(time() - start))
     try:
         r.raise_for_status()
     except HTTPError as e:
-        print(r.text)
-        print(text)
+        logging.error(r.text)
         raise e
     return r
 
