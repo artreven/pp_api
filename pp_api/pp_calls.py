@@ -24,7 +24,7 @@ def extract(text, pid, server, auth_data=None, session=None, max_retries=None,
     :return: response object
     """
     tmp_file = tempfile.NamedTemporaryFile(delete=False, mode='w+')
-    tmp_file.write(str(text))
+    tmp_file.write(str(text).encode('utf8'))
     tmp_file.seek(0)
     return extract_from_file(tmp_file, pid, server, auth_data, session,
                              max_retries,
