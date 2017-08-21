@@ -21,7 +21,7 @@ class TestPP():
         )
         terms = get_terms_from_response(r)
         print(r.json())
-        assert(terms)
+        #assert(terms)
 
     def test_sigma_pi(self):
         path = os.path.join(self.data_folder, 'question_1727.txt')
@@ -29,4 +29,8 @@ class TestPP():
 
     def test_illegal_char_sentiment(self):
         path = os.path.join(self.data_folder, 'question_2189.txt')
+        self.do_extract(path)
+
+    def test_small_question(self):
+        path = os.path.join(self.data_folder, 'question_921.txt')
         self.do_extract(path)
