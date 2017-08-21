@@ -4,6 +4,7 @@ from requests.packages.urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 import tempfile
 import logging
+import traceback
 from time import time
 
 from pp_api import utils as u
@@ -71,6 +72,8 @@ def extract_from_file(file, pid, server, auth_data=None, session=None,
             files={'file': file},
             timeout=(3.05, 27)
         )
+    except Exception as e:
+        logger.error(traceback.format_exc())
     finally:
         file.close()
     logger.debug('call took {:0.3f}'.format(time() - start))
@@ -154,6 +157,10 @@ def get_terms_from_response(r):
             term_container = term_container['document']
             found = True
             break
+
+    if not found:
+        logger.warning("No terms found in this document!")
+        return extr_terms
 
     assert found, [extr_terms, list(term_container.keys()), r.json()]
 
