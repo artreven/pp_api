@@ -23,7 +23,7 @@ def extract(text, pid, server, auth_data=None, session=None, max_retries=None,
     :param server: server url
     :return: response object
     """
-    tmp_file = tempfile.NamedTemporaryFile(delete=False, mode='w+')
+    tmp_file = tempfile.NamedTemporaryFile(delete=False, mode='w+b')
     tmp_file.write(str(text).encode('utf8'))
     tmp_file.seek(0)
     return extract_from_file(tmp_file, pid, server, auth_data, session,
@@ -57,19 +57,22 @@ def extract_from_file(file, pid, server, auth_data=None, session=None,
     session = u.get_session(session, auth_data)
     target_url = server + '/extractor/api/extract'
     start = time()
-    if not hasattr(file, 'read'):
-        file = open(file, 'rb')
-    if max_retries is not None:
-        retries = Retry(total=max_retries,
-                        backoff_factor=0.3,
-                        status_forcelist=[500, 502, 503, 504])
-        session.mount(server, HTTPAdapter(max_retries=retries))
-    r = session.post(
-        target_url,
-        data=data,
-        files={'file': file},
-        timeout=(3.05, 27)
-    )
+    try:
+        if not hasattr(file, 'read'):
+            file = open(file, 'rb')
+        if max_retries is not None:
+            retries = Retry(total=max_retries,
+                            backoff_factor=0.3,
+                            status_forcelist=[500, 502, 503, 504])
+            session.mount(server, HTTPAdapter(max_retries=retries))
+        r = session.post(
+            target_url,
+            data=data,
+            files={'file': file},
+            timeout=(3.05, 27)
+        )
+    finally:
+        file.close()
     logger.debug('call took {:0.3f}'.format(time() - start))
     try:
         r.raise_for_status()
