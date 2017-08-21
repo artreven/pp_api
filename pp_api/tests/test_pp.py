@@ -20,8 +20,13 @@ class TestPP():
             text_path, **self.extract_args
         )
         terms = get_terms_from_response(r)
+        print(r.json())
         assert(terms)
 
     def test_sigma_pi(self):
         path = os.path.join(self.data_folder, 'question_1727.txt')
+        self.do_extract(path)
+
+    def test_illegal_char_sentiment(self):
+        path = os.path.join(self.data_folder, 'question_2189.txt')
         self.do_extract(path)

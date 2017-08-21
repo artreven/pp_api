@@ -50,7 +50,7 @@ def extract_from_file(file, pid, server, auth_data=None, session=None,
         'language': 'en',
         'useTransitiveBroaderConcepts': True,
         'useRelatedConcepts': True,
-        'sentimentAnalysis': True,
+        # 'sentimentAnalysis': True,
         'filterNestedConcepts': True
     }
     data.update(kwargs)
