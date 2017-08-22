@@ -103,7 +103,10 @@ select distinct * where {{
 
 def query_sparql_endpoint(sparql_endpoint, graph_name,
                           query=all_data_q):
-    graph = rdflib.Graph('SPARQLStore', identifier=graph_name)
+    if graph_name:
+        graph = rdflib.ConjunctiveGraph('SPARQLStore', identifier=graph_name)
+    else:
+        graph = rdflib.ConjunctiveGraph('SPARQLStore')
     rt = graph.open(sparql_endpoint)
     rs = graph.query(query)
     return rs
@@ -148,34 +151,48 @@ select distinct ?cpt1 ?cpt2 ?score where {{
     return dist_mx
 
 
-def query_terms2cpts_cooc_scores(sparql_endpoint, cpt_cooc_graph):
+def query_terms2cpts_cooc_scores(sparql_endpoint, cpt_cooc_graph, terms_graph):
+    q_cooc_cpt_score = """
+    select distinct ?tv (group_concat(?cpt;separator="|") as ?cpts) (group_concat(?c_score;separator="|") as ?c_scores) where {{
+      ?s <http://schema.semantic-web.at/ppcm/2013/5/hasConceptCooccurrence> ?co_cpt .
+      ?s <http://schema.semantic-web.at/ppcm/2013/5/textValue> ?tv .
+      ?co_cpt <http://schema.semantic-web.at/ppcm/2013/5/cooccurringExtractedConcept> ?cpt .
+      ?co_cpt <http://schema.semantic-web.at/ppcm/2013/5/score> ?c_score .
+    }}
+    """
+    q_cooc_term_score = """
+    select distinct ?tv (group_concat(?cooc_term;separator="|") as ?cooc_terms) (group_concat(?t_score;separator="|") as ?t_scores) where {{
+      ?s <http://schema.semantic-web.at/ppcm/2013/5/textValue> ?tv .
+      ?s <http://schema.semantic-web.at/ppcm/2013/5/hasTermCooccurrence> ?co_term .
+      ?co_term <http://schema.semantic-web.at/ppcm/2013/5/cooccurringExtractedTerm> ?term_view .
+      ?term_view <http://schema.semantic-web.at/ppcm/2013/5/textValue> ?cooc_term .
+      ?co_term <http://schema.semantic-web.at/ppcm/2013/5/score> ?t_score .
+    }}
+    """
+
     q_cooc_cpt_score = """
 select distinct ?tv (group_concat(?cpt;separator="|") as ?cpts) (group_concat(?c_score;separator="|") as ?c_scores) where {{
-  ?s <http://schema.semantic-web.at/ppcm/2013/5/hasConceptCooccurrence> ?co_cpt .
-  ?s <http://schema.semantic-web.at/ppcm/2013/5/textValue> ?tv .
-  ?co_cpt <http://schema.semantic-web.at/ppcm/2013/5/cooccurringExtractedConcept> ?cpt .
-  ?co_cpt <http://schema.semantic-web.at/ppcm/2013/5/score> ?c_score .
+  GRAPH <{cooc_graph}> {{
+    ?s <http://schema.semantic-web.at/ppcm/2013/5/hasConceptCooccurrence> ?co_cpt .
+    ?co_cpt <http://schema.semantic-web.at/ppcm/2013/5/cooccurringExtractedConcept> ?cpt .
+    ?co_cpt <http://schema.semantic-web.at/ppcm/2013/5/score> ?c_score .
+  }} .
+  GRAPH <{terms_graph}>
+  {{
+    ?s <http://schema.semantic-web.at/ppcm/2013/5/textValue> ?tv .
+  }}
 }}
-"""
-    q_cooc_term_score = """
-select distinct ?tv (group_concat(?cooc_term;separator="|") as ?cooc_terms) (group_concat(?t_score;separator="|") as ?t_scores) where {{
-  ?s <http://schema.semantic-web.at/ppcm/2013/5/textValue> ?tv .
-  ?s <http://schema.semantic-web.at/ppcm/2013/5/hasTermCooccurrence> ?co_term .
-  ?co_term <http://schema.semantic-web.at/ppcm/2013/5/cooccurringExtractedTerm> ?term_view .
-  ?term_view <http://schema.semantic-web.at/ppcm/2013/5/textValue> ?cooc_term .
-  ?co_term <http://schema.semantic-web.at/ppcm/2013/5/score> ?t_score .
-}}
-"""
-    # terms_rs = query_sparql_endpoint(sparql_endpoint, cpt_cooc_graph, q_cooc_term_score)
+""".format(cooc_graph=cpt_cooc_graph, terms_graph=terms_graph)
     cpt_rs = query_sparql_endpoint(
-        sparql_endpoint, cpt_cooc_graph, q_cooc_cpt_score
+        sparql_endpoint, graph_name=None, query=q_cooc_cpt_score
     )
     cooc_dict = dict()
     for r in cpt_rs:
-        cooc_dict[r[0].toPython()] = dict(zip(
-            r[1].split('|'),
-            list(map(float, r[2].split('|')))
-        ))
+        text_value, cooc_cpts, t_scores = r
+        cooc_cpts = cooc_cpts.split('|')
+        t_scores = list(map(float, t_scores.split('|')))
+        cpts_scores = dict(zip(cooc_cpts, t_scores))
+        cooc_dict[text_value.toPython()] = cpts_scores
     return cooc_dict
 
 
