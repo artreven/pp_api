@@ -114,9 +114,16 @@ def get_cpts_from_response(r):
     return extr_cpts
 
 
-def get_shadow_cpts_from_response(r):
+def extract_shadow_cpts(text, shadow_cpts_corpus_id, pid, server,
+                        auth_data=None, session=None, max_retries=None,
+                        **kwargs):
+    r = extract(text, pid, server,
+                auth_data, session, max_retries,
+                shadowConceptCorpusId=shadow_cpts_corpus_id,
+                **kwargs)
+
     attributes = ['prefLabel', 'uri',
-                  'transitiveBroaderConcepts', 'corporaScore']
+                  'transitiveBroaderConcepts', 'relatedConcepts', 'corporaScore']
 
     shadow_cpts = []
     concept_container = r.json()
@@ -140,7 +147,7 @@ def get_shadow_cpts_from_response(r):
                 cpt[attr] = []
         shadow_cpts.append(cpt)
 
-    return shadow_cpts
+    return shadow_cpts, r
 
 
 def get_terms_from_response(r):
@@ -392,11 +399,13 @@ def export_project(pid, server, auth_data=None, session=None):
 
 
 if __name__ == '__main__':
+    import os
     import server_data.custom_apps as server_info
     # import server_data.preview as server_info
-    username = input('Username: ')
-    pw = input('Password: ')
-    auth_data = (username, pw)
+    auth_data = tuple(map(os.getenv, ['pp_user', 'pp_password']))
+    # username = input('Username: ')
+    # pw = input('Password: ')
+    # auth_data = (username, pw)
     r = get_corpus_documents(
         server_info.corpus_id, server_info.pid,
         server_info.server, auth_data=auth_data
