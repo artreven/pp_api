@@ -33,7 +33,7 @@ def extract(text, pid, server, auth_data=None, session=None, max_retries=None,
 
 
 def extract_from_file(file, pid, server, auth_data=None, session=None,
-                      max_retries=None, **kwargs):
+                      max_retries=None, mb_time_factor = 3,**kwargs):
     """
     Make extract call using project determined by pid.
 
@@ -61,6 +61,10 @@ def extract_from_file(file, pid, server, auth_data=None, session=None,
     try:
         if not hasattr(file, 'read'):
             file = open(file, 'rb')
+        # Findout filesize
+        file.seek(0, 2) # Go to end of file
+        f_size_mb = file.tell() / (1024 * 1024)
+        file.seek(0) # Go to start of file
         if max_retries is not None:
             retries = Retry(total=max_retries,
                             backoff_factor=0.3,
@@ -70,13 +74,15 @@ def extract_from_file(file, pid, server, auth_data=None, session=None,
             target_url,
             data=data,
             files={'file': file},
-            timeout=(3.05, 27)
+            timeout=(3.05, int(27 * mb_time_factor*(1 + f_size_mb )))
         )
     except Exception as e:
         logger.error(traceback.format_exc())
     finally:
         file.close()
     logger.debug('call took {:0.3f}'.format(time() - start))
+    if not 'r' in locals():
+        return None
     try:
         r.raise_for_status()
     except HTTPError as e:
@@ -90,6 +96,8 @@ def get_cpts_from_response(r):
                   'transitiveBroaderConcepts', 'relatedConcepts']
 
     extr_cpts = []
+    if r is None:
+        return extr_cpts
     concept_container = r.json()
 
     if not 'concepts' in concept_container:
@@ -126,6 +134,8 @@ def extract_shadow_cpts(text, shadow_cpts_corpus_id, pid, server,
                   'transitiveBroaderConcepts', 'relatedConcepts', 'corporaScore']
 
     shadow_cpts = []
+    if r is None:
+        return shadow_cpts
     concept_container = r.json()
 
     if not 'shadowConcepts' in concept_container:
@@ -153,6 +163,9 @@ def extract_shadow_cpts(text, shadow_cpts_corpus_id, pid, server,
 def get_terms_from_response(r):
     attributes = ['textValue', 'frequencyInDocument', 'score']
     extr_terms = []
+    shadow_cpts = []
+    if r is None:
+        return extr_terms
     term_container = r.json()
 
     found = False
