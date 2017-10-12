@@ -140,14 +140,15 @@ select distinct ?cpt1 ?cpt2 ?score where {{
     for r in rs:
         cpt1 = str(r[0])
         cpt2 = str(r[1])
-        if cpt1 in dist_mx:
-            dist_mx[cpt1][cpt2] = float(r[2])
-        else:
-            dist_mx[cpt1] = {cpt2: float(r[2])}
-        if cpt2 in dist_mx:
-            dist_mx[cpt2][cpt1] = float(r[2])
-        else:
-            dist_mx[cpt2] = {cpt1: float(r[2])}
+        score = float(r[2])
+        try:
+            dist_mx[cpt1][cpt2] = score
+        except KeyError:
+            dist_mx[cpt1] = {cpt2: score}
+        try:
+            dist_mx[cpt2][cpt1] = score
+        except KeyError:
+            dist_mx[cpt2] = {cpt1: score}
     return dist_mx
 
 
