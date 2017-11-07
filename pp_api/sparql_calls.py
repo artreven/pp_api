@@ -101,12 +101,8 @@ select distinct * where {{
 """
 
 
-def query_sparql_endpoint(sparql_endpoint, graph_name,
-                          query=all_data_q):
-    if graph_name:
-        graph = rdflib.ConjunctiveGraph('SPARQLStore', identifier=graph_name)
-    else:
-        graph = rdflib.ConjunctiveGraph('SPARQLStore')
+def query_sparql_endpoint(sparql_endpoint, query=all_data_q):
+    graph = rdflib.ConjunctiveGraph('SPARQLStore')
     rt = graph.open(sparql_endpoint)
     rs = graph.query(query)
     return rs
@@ -115,12 +111,14 @@ def query_sparql_endpoint(sparql_endpoint, graph_name,
 def get_ridfs(sparql_endpoint, termsgraph):
     q_term_scores = """
     select distinct ?lemma ?ridf ?crs where {{
+      GRAPH <{}> {{
         ?s <http://schema.semantic-web.at/ppcm/2013/5/textValue> ?lemma .
         ?s <http://schema.semantic-web.at/ppcm/2013/5/ridfTermScore> ?ridf .
         ?s <http://schema.semantic-web.at/ppcm/2013/5/combinedRelevanceScore> ?crs .
+      }}  
     }}
-    """
-    rs = query_sparql_endpoint(sparql_endpoint, termsgraph, q_term_scores)
+    """.format(termsgraph)
+    rs = query_sparql_endpoint(sparql_endpoint, q_term_scores)
     results = dict()
     for r in rs:
         results[str(r[0])] = float(r[2])
@@ -130,12 +128,14 @@ def get_ridfs(sparql_endpoint, termsgraph):
 def query_cpt_cooc_scores(sparql_endpoint, cpt_cooc_graph):
     q_cooc_score = """
 select distinct ?cpt1 ?cpt2 ?score where {{
+  GRAPH <{}> {{
   ?cpt1 <http://schema.semantic-web.at/ppcm/2013/5/hasConceptCooccurrence> ?o .
   ?o <http://schema.semantic-web.at/ppcm/2013/5/cooccurringExtractedConcept> ?cpt2 .
   ?o <http://schema.semantic-web.at/ppcm/2013/5/score> ?score
+  }}
 }}
-"""
-    rs = query_sparql_endpoint(sparql_endpoint, cpt_cooc_graph, q_cooc_score)
+""".format(cpt_cooc_graph)
+    rs = query_sparql_endpoint(sparql_endpoint, q_cooc_score)
     dist_mx = dict()
     for r in rs:
         cpt1 = str(r[0])
@@ -185,7 +185,7 @@ select distinct ?tv (group_concat(?cpt;separator="|") as ?cpts) (group_concat(?c
 }}
 """.format(cooc_graph=cpt_cooc_graph, terms_graph=terms_graph)
     cpt_rs = query_sparql_endpoint(
-        sparql_endpoint, graph_name=None, query=q_cooc_cpt_score
+        sparql_endpoint, query=q_cooc_cpt_score
     )
     cooc_dict = dict()
     for r in cpt_rs:

@@ -163,7 +163,6 @@ def extract_shadow_cpts(text, shadow_cpts_corpus_id, pid, server,
 def get_terms_from_response(r):
     attributes = ['textValue', 'frequencyInDocument', 'score']
     extr_terms = []
-    shadow_cpts = []
     if r is None:
         return extr_terms
     term_container = r.json()

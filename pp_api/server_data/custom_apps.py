@@ -1,5 +1,5 @@
 server = 'https://custom_apps.poolparty.biz'
-sparql_endpoint = 'http://custom-virtuoso.semantic-web.at:8890/sparql'
+sparql_endpoint = 'http://db-virtuoso-custom-demo.semantic-web.at:8890/sparql/'
 pp_sparql_endpoint = server + '/PoolParty/sparql/'
 
 # cocktails
