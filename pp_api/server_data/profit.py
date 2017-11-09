@@ -31,3 +31,5 @@ ld_graphs = {
     'http://www.nytimes.com/services/xml/rss/nyt/YourMoney.xml': ['text', 'title', 'title'],
     'http://europa.eu/newsroom/rss-feeds': ['text', 'title', 'title']
 }
+test_server = 'https://pp-profit-dev.semantic-web.at'
+test_pid = '1DF17390-6A1A-0001-BCC7-ED9C1680AE80'
