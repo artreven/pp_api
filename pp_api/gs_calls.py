@@ -97,7 +97,7 @@ class GraphSearch:
         r = pp_calls.extract(
             pid=profit_info.test_pid, server=profit_info.test_server,
             auth_data=auth_data,
-            text=text1
+            text=text
         )
         cpts = pp_calls.get_cpts_from_response(r)
         self.create_with_freqs(
