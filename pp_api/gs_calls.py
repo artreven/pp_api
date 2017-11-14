@@ -1,7 +1,7 @@
 from requests.exceptions import HTTPError
 
 from pp_api import utils as u
-import pp_calls
+from pp_api import pp_calls
 
 
 class GraphSearch:
