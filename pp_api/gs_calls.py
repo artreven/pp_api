@@ -31,7 +31,8 @@ class GraphSearch:
         r.raise_for_status()
         return r
 
-    def _create(self, id_, title, author, date, text=None, update=False, **kwargs):
+    def _create(self, id_, title, author, date, text=None, update=False,
+                text_limit=True, **kwargs):
         """
 
         :param id_: should be a URL starting from protocol (e.g. http://)
@@ -41,6 +42,8 @@ class GraphSearch:
         :param kwargs: any additional fields in key=value format. Fields should exist in GS.
         :return:
         """
+        if text_limit and len(text) > 12048:
+            text = text[:12000]
         if not update:
             suffix = '/GraphSearch/api/content/create'
         else:
@@ -71,7 +74,7 @@ class GraphSearch:
             x['uri'].split("/")[-1]: x['frequencyInDocument'] for x in cpts
         }
         cpt_facets = {
-            ('dyn_int_' + suffix): [freq] for suffix, freq in cpt_freqs.items()
+            ('dyn_flt_' + suffix): [freq] for suffix, freq in cpt_freqs.items()
         }
         cpt_facets.update({
             'dyn_uri_all_concepts': cpt_uris
@@ -172,7 +175,7 @@ class GraphSearch:
         :param finish: datetime object
         :return:
         """
-        start_str = (start.strftime('%Y-%m-%dT%H:%M:%SZ')
+        start_str = (start.strftime('%Y-%m-%dT%H:%M:%S.000Z')
                      if start
                      else "1970-01-01T23:00:00.000Z")
         finish_str = (finish.strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -195,6 +198,26 @@ class GraphSearch:
         suffix = '/GraphSearch/admin/config/fields'
         r = self.session.get(
             self.server + suffix,
+        )
+        try:
+            r.raise_for_status()
+        except HTTPError as e:
+            print(r.request.__dict__)
+            print(r.text)
+            raise e
+        return r
+
+    def add_field(self, space_id, field, label):
+        suffix = '/GraphSearch/admin/suggest/add'
+        data = {
+            'searchSpaceId': space_id,
+            'field': field,
+            'label': label
+        }
+        r = self.session.post(
+            self.server + suffix,
+            params=data,
+            # data=data
         )
         try:
             r.raise_for_status()

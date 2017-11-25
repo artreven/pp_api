@@ -33,3 +33,4 @@ ld_graphs = {
 }
 test_server = 'https://pp-profit-dev.semantic-web.at'
 test_pid = '1DF17390-6A1A-0001-BCC7-ED9C1680AE80'
+gs_profit_space = "d8b07c03-153d-405c-99f2-ae67a1eee438"
