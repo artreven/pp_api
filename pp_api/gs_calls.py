@@ -135,7 +135,6 @@ class GraphSearch:
              'value': cpt_uri}
         ]
         r = self._search(
-            count=10000,
             searchFilters=search_filters,
             documentFacets=['all'],
             **kwargs
@@ -148,7 +147,6 @@ class GraphSearch:
              'value': author}
         ]
         r = self._search(
-            count=10000,
             searchFilters=search_filters,
             documentFacets=['all'],
             **kwargs
@@ -161,7 +159,6 @@ class GraphSearch:
              'value': id_}
         ]
         r = self._search(
-            count=10000,
             searchFilters=search_filters,
             documentFacets=['all'],
             **kwargs
@@ -187,7 +184,6 @@ class GraphSearch:
              'value': date_str}
         ]
         r = self._search(
-            count=10000,
             searchFilters=search_filters,
             documentFacets=['all'],
             **kwargs
