@@ -165,7 +165,7 @@ class GraphSearch:
         )
         return r
 
-    def filter_date(self, start=None, finish=None, **kwargs):
+    def filter_date(self, start_date=None, finish_date=None, **kwargs):
         """
 
         :param start: datetime object
@@ -173,10 +173,10 @@ class GraphSearch:
         :return:
         """
         start_str = (start.strftime('%Y-%m-%dT%H:%M:%S.000Z')
-                     if start
+                     if start_date
                      else "1970-01-01T23:00:00.000Z")
         finish_str = (finish.strftime('%Y-%m-%dT%H:%M:%SZ')
-                      if finish
+                      if finish_date
                       else "NOW")
         date_str = '[{start} TO {finish}]'.format(start=start_str, finish=finish_str)
         search_filters = [
