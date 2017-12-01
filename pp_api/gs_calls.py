@@ -85,11 +85,13 @@ class GraphSearch:
             update=update
         )
 
-    def extract_and_create(self, id_, title, author, date, text, update=False):
+    def extract_and_create(self, pid, id_, title, author, date, text,
+                           update=False):
         """
         Extract concepts from the text and create corresponding document with
         concept frequencies.
 
+        :param pid: project id of the thesaurus in PoolParty
         :param id_:
         :param title:
         :param author:
@@ -97,10 +99,9 @@ class GraphSearch:
         :param text:
         :return:
         """
-        r = pp_calls.extract(
-            pid=profit_info.test_pid, server=profit_info.test_server,
-            auth_data=auth_data,
-            text=text
+        pp = pp_calls.PoolParty(server=self.server, auth_data=self.auth_data)
+        r = pp.extract(
+            pid=pid, text=text
         )
         cpts = pp_calls.get_cpts_from_response(r)
         self.create_with_freqs(
@@ -172,10 +173,10 @@ class GraphSearch:
         :param finish: datetime object
         :return:
         """
-        start_str = (start.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        start_str = (start_date.strftime('%Y-%m-%dT%H:%M:%S.000Z')
                      if start_date
                      else "1970-01-01T23:00:00.000Z")
-        finish_str = (finish.strftime('%Y-%m-%dT%H:%M:%SZ')
+        finish_str = (finish_date.strftime('%Y-%m-%dT%H:%M:%SZ')
                       if finish_date
                       else "NOW")
         date_str = '[{start} TO {finish}]'.format(start=start_str, finish=finish_str)
