@@ -11,9 +11,9 @@ def get_session(session, auth_data):
     return session
 
 
-def get_auth_data():
-    username = os.getenv('pp_user')
-    pw = os.getenv('pp_password')
+def get_auth_data(env_username='pp_user', env_password='pp_password'):
+    username = os.getenv(env_username)
+    pw = os.getenv(env_password)
     auth_data = (username, pw)
     assert username and pw
     return auth_data
