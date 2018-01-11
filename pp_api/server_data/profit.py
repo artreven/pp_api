@@ -1,5 +1,6 @@
 server = 'http://profit.poolparty.biz'
 profit_pid = '1DE00088-2B4C-0001-9BB3-1C5234FF8640'
+finance_onto = 'http://profit.poolparty.biz/PROFIT_Finance'
 virtuoso_sparql_endpoint = 'https://profit-virtuoso.poolparty.biz/sparql'
 ld_graphs = {
     'http://www.telegraph.co.uk/business/rss.xml': ['text', 'title', 'title'],

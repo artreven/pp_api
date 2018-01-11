@@ -196,7 +196,7 @@ class PoolParty:
 
     def get_pref_labels(self, uris, pid):
         """
-        Make extract call using project determined by pid.
+        Get prefLabels (in English) of all concepts specified by uris.
 
         :param uris:
         :param pid: id of project
@@ -393,6 +393,16 @@ class PoolParty:
                    for x in r.json()['suggestedConcepts']]
         else:
             ans = []
+        return ans
+
+    def get_onto(self, uri):
+        suffix = '/PoolParty/api/schema/ontology'
+        data = {
+            'uri': uri
+        }
+        r = self.session.get(self.server + suffix, params=data)
+        r.raise_for_status()
+        ans = r.json()
         return ans
 
 
