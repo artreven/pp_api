@@ -405,6 +405,25 @@ class PoolParty:
         ans = r.json()
         return ans
 
+    def get_history(self, pid, from_=None):
+        """
+
+        :param pid: project
+        :param from_: datetime instance or None
+        :return:
+        """
+        suffix = '/PoolParty/api/history/{pid}'.format(
+            pid=pid
+        )
+        data = dict()
+        if from_ is not None:
+            data.update({
+                'fromTime': from_.strftime('%Y-%m-%dT%H:%M:%S')
+            })
+        r = self.session.get(self.server + suffix, params=data)
+        r.raise_for_status()
+        return r.json()
+
 
 
 ########################
