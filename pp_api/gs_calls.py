@@ -31,6 +31,30 @@ class GraphSearch:
         r.raise_for_status()
         return r
 
+    def clean(self):
+        """
+        Remove first 100000 document from GraphSearch.
+        """
+        r = self._search(
+            count=100000,
+        )
+        for result in r.json()['results']:
+            id_ = result['id']
+            r = self.delete(
+                id_=id_
+            )
+        return r.json()['results']
+
+    def in_gs(self, uri):
+        """
+        Check if document with specified uri is contained in GS
+
+        :param uri: document uri
+        :return: Boolean
+        """
+        r = self.filter_id(id_=uri)
+        return r.json()['total'] > 0
+
     def _create(self, id_, title, author, date, text=None, update=False,
                 text_limit=True, **kwargs):
         """
