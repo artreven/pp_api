@@ -56,7 +56,9 @@ class PoolParty:
             'useTransitiveBroaderConcepts': True,
             'useRelatedConcepts': True,
             # 'sentimentAnalysis': True,
-            'filterNestedConcepts': True
+            'filterNestedConcepts': True,
+            'showMatchingPosition': True,
+            'showMatchingDetails': True
         }
         data.update(kwargs)
         target_url = self.server + '/extractor/api/extract'
@@ -423,6 +425,70 @@ class PoolParty:
         r = self.session.get(self.server + suffix, params=data)
         r.raise_for_status()
         return r.json()
+
+    def get_schemes(self, pid):
+        suffix = '/PoolParty/api/thesaurus/{project}/schemes'.format(
+            project=pid
+        )
+        r = self.session.get(self.server + suffix)
+        r.raise_for_status()
+        ans = r.json()
+        return ans
+
+    def add_new_concept(self, pid, pref_label, parent=None):
+        suffix = '/PoolParty/api/thesaurus/{project}/createConcept'.format(
+            project=pid
+        )
+        data = {
+            'prefLabel': pref_label,
+            'parent': (parent if parent is not None else
+                       self.get_schemes(pid)[0]['uri'])
+        }
+        r = self.session.post(self.server + suffix, data=data)
+        r.raise_for_status()
+        ans = r.json()
+        return ans
+
+    def add_label(self, pid, uri, label_value,
+                  label_type='skos:altLabel', lang=None):
+        suffix = '/PoolParty/api/thesaurus/{project}/addLiteral'.format(
+            project=pid
+        )
+        data = {
+            'concept': uri,
+            'label': label_value,
+            'property': label_type,
+            'language': lang
+        }
+        r = self.session.post(self.server + suffix, data=data)
+        r.raise_for_status()
+        return r
+
+    def add_relation(self, pid, source_uri, target_uri,
+                     relation_type='skos:narrower'):
+        suffix = '/PoolParty/api/thesaurus/{project}/addRelation'.format(
+            project=pid
+        )
+        data = {
+            'sourceConcept': source_uri,
+            'targetConcept': target_uri,
+            'property': relation_type,
+        }
+        r = self.session.post(self.server + suffix, data=data)
+        r.raise_for_status()
+        return r
+
+    def add_narrower(self, pid, broader_uri, narrower_uri):
+        return self.add_relation(
+            pid=pid, source_uri=broader_uri, target_uri=narrower_uri,
+            relation_type='skos:narrower'
+        )
+
+    def add_related(self, pid, source_uri, target_uri):
+        return self.add_relation(
+            pid=pid, source_uri=source_uri, target_uri=target_uri,
+            relation_type='skos:related'
+        )
 
 
 
