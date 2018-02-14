@@ -1,5 +1,6 @@
 import requests
-import os
+
+from decouple import config
 
 
 def get_session(session, auth_data):
@@ -13,8 +14,8 @@ def get_session(session, auth_data):
 
 
 def get_auth_data(env_username='PP_USER', env_password='PP_PASSWORD'):
-    username = os.getenv(env_username)
-    pw = os.getenv(env_password)
+    username = config(env_username)
+    pw = config(env_password)
     auth_data = (username, pw)
     assert username and pw
     return auth_data
