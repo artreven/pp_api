@@ -6,6 +6,9 @@ with open('requirements.txt', 'r') as f:
     for line in f:
         requirements.append(str(line.strip()))
 
+print("Requirements:")
+print(requirements)
+
 setup(
     name='pp_api',
     version='0.1dev',
