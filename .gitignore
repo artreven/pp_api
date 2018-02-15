@@ -3,5 +3,4 @@ __pycache__
 */migrations/
 dist/
 .idea
-
-
+.env

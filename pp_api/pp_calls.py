@@ -6,7 +6,6 @@ import tempfile
 import logging
 import traceback
 from time import time
-from rdflib.namespace import SKOS
 
 from pp_api import utils as u
 
@@ -117,6 +116,19 @@ class PoolParty:
                     cpt[attr] = cpt_json[attr]
                 else:
                     cpt[attr] = []
+            if 'matchingLabels' in cpt_json:
+                cpt_matchings = []
+                ms = sum([x['matchedTexts'] for x in cpt_json['matchingLabels']],
+                         [])
+                for m in ms:
+                    cpt_matching = {
+                        'text': m['matchedText'],
+                        'frequency': m['frequency'],
+                        'positions': [(x['beginningIndex'], x['endIndex'])
+                                      for x in m['positions']]
+                    }
+                    cpt_matchings.append(cpt_matching)
+                cpt['matchings'] = cpt_matchings
             extr_cpts.append(cpt)
 
         return extr_cpts
@@ -907,24 +919,5 @@ def export_project(pid, server, auth_data=None, session=None):
 
 
 if __name__ == '__main__':
-    import os
-    import server_data.custom_apps as server_info
-    # import server_data.preview as server_info
-    auth_data = tuple(map(os.getenv, ['pp_user', 'pp_password']))
-    pp = PoolParty(
-        server=server_info.server,
-        auth_data=auth_data
-    )
-    r = pp.get_corpus_documents(
-        server_info.corpus_id, server_info.pid
-    )
-    print(len(r))
-    r = pp.export_project(
-        pid=server_info.pid
-    )
-    print(r)
-
-    import rdflib
-    g = rdflib.Graph()
-    g.parse(data=r, format='n3')
+    pass
 
