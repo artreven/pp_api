@@ -2,4 +2,4 @@ requests
 numpy
 rdflib
 SPARQLWrapper
-python-decouple
+decouple
