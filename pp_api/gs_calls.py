@@ -274,6 +274,25 @@ class GraphSearch:
             raise e
         return r
 
+    def remove_field(self, space_id, field):
+        suffix = '/GraphSearch/admin/suggest/delete'
+        data = {
+            'searchSpaceId': space_id,
+            'field': field
+        }
+        r = self.session.post(
+            self.server + suffix,
+            params=data,
+            # data=data
+        )
+        try:
+            r.raise_for_status()
+        except HTTPError as e:
+            print(r.request.__dict__)
+            print(r.text)
+            raise e
+        return r
+
 
 def sort_by_date(gs_results):
     ans = sorted(
