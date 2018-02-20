@@ -145,9 +145,10 @@ class GraphSearch:
     def extract_and_update(self, *args, **kwargs):
         return self.extract_and_create(*args, update=True, **kwargs)
 
-    def _search(self, search_space_id, **kwargs):
+    def _search(self, search_space_id, locale="en", **kwargs):
         suffix = '/GraphSearch/api/search'
-        data = {'searchSpaceId': search_space_id}
+        data = {'searchSpaceId': search_space_id,
+                'locale': locale}
         if kwargs:
             data.update(**kwargs)
         r = self.session.post(
