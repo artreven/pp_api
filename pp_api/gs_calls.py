@@ -145,10 +145,25 @@ class GraphSearch:
     def extract_and_update(self, *args, **kwargs):
         return self.extract_and_create(*args, update=True, **kwargs)
 
-    def _search(self, search_space_id, locale="en", **kwargs):
+    def search(self, search_space_id, search_filters=None, locale='en',
+               **kwargs):
+        """
+
+        :param search_space_id: ID of search space from GS admin->configuration
+        :param search_filters: the filters (usually prepared by other methods of GS
+        :param locale: language (default: 'en')
+        :param kwargs: other kwargs, for example,
+            count - total number of results,
+            start - start index
+        :return: results as returned by GS API call
+        """
         suffix = '/GraphSearch/api/search'
-        data = {'searchSpaceId': search_space_id,
-                'locale': locale}
+        data = {
+            'searchSpaceId': search_space_id,
+            'locale': locale,
+            'searchFilters': search_filters,
+            'documentFacets': ['all']
+        }
         if kwargs:
             data.update(**kwargs)
         r = self.session.post(
@@ -163,60 +178,36 @@ class GraphSearch:
             raise e
         return r
 
-    def full_text_search(self, query_str, search_space_id, **kwargs):
+    def filter_full_text(self, query_str):
         search_filters = [
             {'field': 'full_text_search',
              'value': query_str,
              'optional': False}
         ]
-        r = self._search(
-            search_space_id=search_space_id,
-            searchFilters=search_filters,
-            documentFacets=['all'],
-            **kwargs
-        )
-        return r
+        return search_filters
 
-    def filter_cpt(self, cpt_uri, search_space_id, **kwargs):
+    def filter_cpt(self, cpt_uri):
         search_filters = [
             {'field': 'dyn_uri_all_concepts',
              'value': cpt_uri}
         ]
-        r = self._search(
-            search_space_id=search_space_id,
-            searchFilters=search_filters,
-            documentFacets=['all'],
-            **kwargs
-        )
-        return r
+        return search_filters
 
-    def filter_author(self, author, search_space_id, **kwargs):
+    def filter_author(self, author):
         search_filters = [
             {'field': 'dyn_lit_author',
              'value': author}
         ]
-        r = self._search(
-            search_space_id=search_space_id,
-            searchFilters=search_filters,
-            documentFacets=['all'],
-            **kwargs
-        )
-        return r
+        return search_filters
 
-    def filter_id(self, id_, search_space_id, **kwargs):
+    def filter_id(self, id_):
         search_filters = [
             {'field': 'identifier',
              'value': id_}
         ]
-        r = self._search(
-            search_space_id=search_space_id,
-            searchFilters=search_filters,
-            documentFacets=['all'],
-            **kwargs
-        )
-        return r
+        return search_filters
 
-    def filter_date(self, search_space_id, start_date=None, finish_date=None, **kwargs):
+    def filter_date(self, start_date=None, finish_date=None):
         """
 
         :param start: datetime object
@@ -234,13 +225,7 @@ class GraphSearch:
             {'field': 'date',
              'value': date_str}
         ]
-        r = self._search(
-            search_space_id=search_space_id,
-            searchFilters=search_filters,
-            documentFacets=['all'],
-            **kwargs
-        )
-        return r
+        return search_filters
 
     def get_fields(self):
         suffix = '/GraphSearch/admin/config/fields'
