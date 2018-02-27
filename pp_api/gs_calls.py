@@ -161,9 +161,10 @@ class GraphSearch:
         data = {
             'searchSpaceId': search_space_id,
             'locale': locale,
-            'searchFilters': search_filters,
             'documentFacets': ['all']
         }
+        if search_filters is not None:
+            data.update({'searchFilters': search_filters})
         if kwargs:
             data.update(**kwargs)
         r = self.session.post(
