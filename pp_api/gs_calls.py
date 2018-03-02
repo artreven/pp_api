@@ -145,9 +145,10 @@ class GraphSearch:
     def extract_and_update(self, *args, **kwargs):
         return self.extract_and_create(*args, update=True, **kwargs)
 
-    def _search(self, search_space_id, **kwargs):
+    def _search(self, search_space_id, locale="en", **kwargs):
         suffix = '/GraphSearch/api/search'
-        data = {'searchSpaceId': search_space_id}
+        data = {'searchSpaceId': search_space_id,
+                'locale': locale}
         if kwargs:
             data.update(**kwargs)
         r = self.session.post(
@@ -260,6 +261,25 @@ class GraphSearch:
             'searchSpaceId': space_id,
             'field': field,
             'label': label
+        }
+        r = self.session.post(
+            self.server + suffix,
+            params=data,
+            # data=data
+        )
+        try:
+            r.raise_for_status()
+        except HTTPError as e:
+            print(r.request.__dict__)
+            print(r.text)
+            raise e
+        return r
+
+    def remove_field(self, space_id, field):
+        suffix = '/GraphSearch/admin/suggest/delete'
+        data = {
+            'searchSpaceId': space_id,
+            'field': field
         }
         r = self.session.post(
             self.server + suffix,

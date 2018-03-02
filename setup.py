@@ -2,8 +2,8 @@ from distutils.core import setup
 
 setup(
     name='pp_api',
-    version='profit-v11',
-    packages=['pp_api', 'pp_api.server_data'],
+    version='profit-v11.1',
+    packages=['pp_api'],
     license='MIT',
     requires=open('requirements.txt', 'r').read().split()
 )
