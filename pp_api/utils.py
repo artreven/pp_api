@@ -1,19 +1,21 @@
 import requests
-import os
+
+from decouple import config
 
 
 def get_session(session, auth_data):
     if session is None:
-        assert auth_data is not None
+        if auth_data is None:
+            auth_data = get_auth_data()
         session = requests.session()
     if auth_data is not None:
         session.auth = auth_data
     return session
 
 
-def get_auth_data(env_username='pp_user', env_password='pp_password'):
-    username = os.getenv(env_username)
-    pw = os.getenv(env_password)
+def get_auth_data(env_username='PP_USER', env_password='PP_PASSWORD'):
+    username = config(env_username)
+    pw = config(env_password)
     auth_data = (username, pw)
     assert username and pw
     return auth_data

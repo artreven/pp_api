@@ -6,7 +6,6 @@ import tempfile
 import logging
 import traceback
 from time import time
-from rdflib.namespace import SKOS
 
 from pp_api import utils as u
 
@@ -56,7 +55,9 @@ class PoolParty:
             'useTransitiveBroaderConcepts': True,
             'useRelatedConcepts': True,
             # 'sentimentAnalysis': True,
-            'filterNestedConcepts': True
+            'filterNestedConcepts': True,
+            'showMatchingPosition': True,
+            'showMatchingDetails': True
         }
         data.update(kwargs)
         target_url = self.server + '/extractor/api/extract'
@@ -115,6 +116,19 @@ class PoolParty:
                     cpt[attr] = cpt_json[attr]
                 else:
                     cpt[attr] = []
+            if 'matchingLabels' in cpt_json:
+                cpt_matchings = []
+                ms = sum([x['matchedTexts'] for x in cpt_json['matchingLabels']],
+                         [])
+                for m in ms:
+                    cpt_matching = {
+                        'text': m['matchedText'],
+                        'frequency': m['frequency'],
+                        'positions': [(x['beginningIndex'], x['endIndex'])
+                                      for x in m['positions']]
+                    }
+                    cpt_matchings.append(cpt_matching)
+                cpt['matchings'] = cpt_matchings
             extr_cpts.append(cpt)
 
         return extr_cpts
@@ -404,6 +418,89 @@ class PoolParty:
         r.raise_for_status()
         ans = r.json()
         return ans
+
+    def get_history(self, pid, from_=None):
+        """
+
+        :param pid: project
+        :param from_: datetime instance or None
+        :return:
+        """
+        suffix = '/PoolParty/api/history/{pid}'.format(
+            pid=pid
+        )
+        data = dict()
+        if from_ is not None:
+            data.update({
+                'fromTime': from_.strftime('%Y-%m-%dT%H:%M:%S')
+            })
+        r = self.session.get(self.server + suffix, params=data)
+        r.raise_for_status()
+        return r.json()
+
+    def get_schemes(self, pid):
+        suffix = '/PoolParty/api/thesaurus/{project}/schemes'.format(
+            project=pid
+        )
+        r = self.session.get(self.server + suffix)
+        r.raise_for_status()
+        ans = r.json()
+        return ans
+
+    def add_new_concept(self, pid, pref_label, parent=None):
+        suffix = '/PoolParty/api/thesaurus/{project}/createConcept'.format(
+            project=pid
+        )
+        data = {
+            'prefLabel': pref_label,
+            'parent': (parent if parent is not None else
+                       self.get_schemes(pid)[0]['uri'])
+        }
+        r = self.session.post(self.server + suffix, data=data)
+        r.raise_for_status()
+        ans = r.json()
+        return ans
+
+    def add_label(self, pid, uri, label_value,
+                  label_type='skos:altLabel', lang=None):
+        suffix = '/PoolParty/api/thesaurus/{project}/addLiteral'.format(
+            project=pid
+        )
+        data = {
+            'concept': uri,
+            'label': label_value,
+            'property': label_type,
+            'language': lang
+        }
+        r = self.session.post(self.server + suffix, data=data)
+        r.raise_for_status()
+        return r
+
+    def add_relation(self, pid, source_uri, target_uri,
+                     relation_type='skos:narrower'):
+        suffix = '/PoolParty/api/thesaurus/{project}/addRelation'.format(
+            project=pid
+        )
+        data = {
+            'sourceConcept': source_uri,
+            'targetConcept': target_uri,
+            'property': relation_type,
+        }
+        r = self.session.post(self.server + suffix, data=data)
+        r.raise_for_status()
+        return r
+
+    def add_narrower(self, pid, broader_uri, narrower_uri):
+        return self.add_relation(
+            pid=pid, source_uri=broader_uri, target_uri=narrower_uri,
+            relation_type='skos:narrower'
+        )
+
+    def add_related(self, pid, source_uri, target_uri):
+        return self.add_relation(
+            pid=pid, source_uri=source_uri, target_uri=target_uri,
+            relation_type='skos:related'
+        )
 
 
 
@@ -822,24 +919,5 @@ def export_project(pid, server, auth_data=None, session=None):
 
 
 if __name__ == '__main__':
-    import os
-    import server_data.custom_apps as server_info
-    # import server_data.preview as server_info
-    auth_data = tuple(map(os.getenv, ['pp_user', 'pp_password']))
-    pp = PoolParty(
-        server=server_info.server,
-        auth_data=auth_data
-    )
-    r = pp.get_corpus_documents(
-        server_info.corpus_id, server_info.pid
-    )
-    print(len(r))
-    r = pp.export_project(
-        pid=server_info.pid
-    )
-    print(r)
-
-    import rdflib
-    g = rdflib.Graph()
-    g.parse(data=r, format='n3')
+    pass
 

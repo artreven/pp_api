@@ -11,11 +11,12 @@ class GraphSearch:
         self.auth_data = auth_data
         self.session = session
 
-    def delete(self, id_=None, source=None):
+    def delete(self, search_space_id, id_=None, source=None):
         if id_ is not None:
             suffix = '/GraphSearch/api/content/delete/id'
             data = {
                 'identifier': id_,
+                'searchSpaceId': search_space_id
             }
         elif source is not None:
             suffix = '/GraphSearch/api/content/delete/source'
@@ -31,7 +32,34 @@ class GraphSearch:
         r.raise_for_status()
         return r
 
-    def _create(self, id_, title, author, date, text=None, update=False,
+    def clean(self, search_space_id):
+        """
+        Remove first 100000 document from GraphSearch.
+        """
+        r = self._search(
+            count=100000,
+            search_space_id=search_space_id
+        )
+        for result in r.json()['results']:
+            id_ = result['id']
+            r = self.delete(
+                id_=id_,
+                search_space_id=search_space_id
+            )
+        return r.json()['results']
+
+    def in_gs(self, uri, search_space_id):
+        """
+        Check if document with specified uri is contained in GS
+
+        :param uri: document uri
+        :return: Boolean
+        """
+        r = self.filter_id(id_=uri, search_space_id=search_space_id)
+        return r.json()['total'] > 0
+
+    def _create(self, id_, title, author, date, search_space_id,
+                text=None, update=False,
                 text_limit=True, **kwargs):
         """
 
@@ -54,7 +82,8 @@ class GraphSearch:
             'author': author,
             'date': date.strftime('%Y-%m-%dT%H:%M:%SZ'),
             'text': text,
-            'useExtraction': False
+            'useExtraction': False,
+            'searchSpaceId': search_space_id
         }
         data.update(kwargs)
         r = self.session.post(
@@ -68,7 +97,8 @@ class GraphSearch:
             raise e
         return r
 
-    def create_with_freqs(self, id_, title, author, date, cpts, text=None, update=False):
+    def create_with_freqs(self, id_, title, author, date, cpts, search_space_id,
+                          text=None, update=False):
         cpt_uris = [x['uri'] for x in cpts]
         cpt_freqs = {
             x['uri'].split("/")[-1]: x['frequencyInDocument'] for x in cpts
@@ -82,10 +112,11 @@ class GraphSearch:
         return self._create(
             id_=id_, title=title, author=author, date=date,
             text=text, facets=cpt_facets,
-            update=update
+            update=update, search_space_id=search_space_id
         )
 
     def extract_and_create(self, pid, id_, title, author, date, text,
+                           search_space_id,
                            update=False):
         """
         Extract concepts from the text and create corresponding document with
@@ -106,16 +137,17 @@ class GraphSearch:
         cpts = pp_calls.get_cpts_from_response(r)
         self.create_with_freqs(
             id_=id_, title=title, author=author,
-            date=date, text=text, cpts=cpts, update=update
+            date=date, text=text, cpts=cpts, update=update,
+            search_space_id=search_space_id
         )
         return cpts
 
     def extract_and_update(self, *args, **kwargs):
         return self.extract_and_create(*args, update=True, **kwargs)
 
-    def _search(self, **kwargs):
+    def _search(self, search_space_id, **kwargs):
         suffix = '/GraphSearch/api/search'
-        data = dict()
+        data = {'searchSpaceId': search_space_id}
         if kwargs:
             data.update(**kwargs)
         r = self.session.post(
@@ -130,43 +162,60 @@ class GraphSearch:
             raise e
         return r
 
-    def filter_cpt(self, cpt_uri, **kwargs):
+    def full_text_search(self, query_str, search_space_id, **kwargs):
+        search_filters = [
+            {'field': 'full_text_search',
+             'value': query_str,
+             'optional': False}
+        ]
+        r = self._search(
+            search_space_id=search_space_id,
+            searchFilters=search_filters,
+            documentFacets=['all'],
+            **kwargs
+        )
+        return r
+
+    def filter_cpt(self, cpt_uri, search_space_id, **kwargs):
         search_filters = [
             {'field': 'dyn_uri_all_concepts',
              'value': cpt_uri}
         ]
         r = self._search(
+            search_space_id=search_space_id,
             searchFilters=search_filters,
             documentFacets=['all'],
             **kwargs
         )
         return r
 
-    def filter_author(self, author, **kwargs):
+    def filter_author(self, author, search_space_id, **kwargs):
         search_filters = [
             {'field': 'dyn_lit_author',
              'value': author}
         ]
         r = self._search(
+            search_space_id=search_space_id,
             searchFilters=search_filters,
             documentFacets=['all'],
             **kwargs
         )
         return r
 
-    def filter_id(self, id_, **kwargs):
+    def filter_id(self, id_, search_space_id, **kwargs):
         search_filters = [
             {'field': 'identifier',
              'value': id_}
         ]
         r = self._search(
+            search_space_id=search_space_id,
             searchFilters=search_filters,
             documentFacets=['all'],
             **kwargs
         )
         return r
 
-    def filter_date(self, start_date=None, finish_date=None, **kwargs):
+    def filter_date(self, search_space_id, start_date=None, finish_date=None, **kwargs):
         """
 
         :param start: datetime object
@@ -185,6 +234,7 @@ class GraphSearch:
              'value': date_str}
         ]
         r = self._search(
+            search_space_id=search_space_id,
             searchFilters=search_filters,
             documentFacets=['all'],
             **kwargs
@@ -233,89 +283,26 @@ def sort_by_date(gs_results):
     return ans
 
 
+def add_custom_fields_from_the(search_space_id, pid, pp, gs, the_path):
+    # TODO: debug
+    from thesaurus.thesaurus import Thesaurus
+
+    the = Thesaurus.get_the_pp(
+        the_path=the_path, pp=pp, pid=pid
+    )
+    all_cpts = the.get_all_concepts_and_pref_labels(lang='en')
+    fields = [x['field'] for x in gs.get_fields().json()['searchFields']]
+    for uri, pl in all_cpts.items():
+        field_str = "dyn_flt_" + uri.split("/")[-1]
+        if field_str in fields:
+            continue
+        else:
+            r = gs.add_field(
+                space_id=search_space_id,
+                field=field_str,
+                label=pl
+            )
+
+
 if __name__ == '__main__':
-    import server_data.profit as profit_info
-    import os
-    username = os.getenv('pp_user')
-    pw = os.getenv('pp_password')
-    auth_data = (username, pw)
-
-    ###
-    gs = GraphSearch(server=profit_info.test_server, auth_data=auth_data)
-
-    import datetime
-    id1 = 'http://id1'
-    # yesterday = (datetime.datetime.utcnow() - datetime.timedelta(days=1))
-    # text1 = 'Dogs Euro European Central Bank whatever else 2'
-    # cpts = gs.extract_and_update(
-    #     id_=id1, title='title1', author='me',
-    #     date=yesterday, text=text1
-    # )
-    # id2 = 'http://id2'
-    # month_ago = (datetime.datetime.utcnow() - datetime.timedelta(days=30))
-    # text2 = 'Prior America Meat'
-    # cpts = gs.extract_and_update(
-    #     id_=id2, title='title2', author='me',
-    #     date=month_ago, text=text2
-    # )
-
-    import pprint
-    # search for a particular article specified by id
-    r = gs.filter_id(id1)
-    results = r.json()['results']
-    assert len(results) == 1
-
-
-    # search by author
-    r = gs.filter_author('me')
-    results = r.json()['results']
-    print('\n\n\n Author search')
-    pprint.pprint(r.json())
-    assert len(results) == 2
-
-
-    # search by author and sort by date
-    r = gs.filter_author('me', sort={'field': 'date', 'direction': 'DESC'})  # DESC or ASC
-    results = r.json()['results']
-    print('\n\n\n Author search')
-    pprint.pprint(r.json())
-    assert len(results) == 2
-
-
-    # filter by dates
-    two_days_ago = (datetime.datetime.utcnow() - datetime.timedelta(days=2))
-    thirty_two_days_ago = (datetime.datetime.utcnow() - datetime.timedelta(days=32))
-    r = gs.filter_date(start=two_days_ago)
-    results = r.json()['results']
-    # print('\n\n\n Date Filter')
-    # pprint.pprint(r.json())
-    assert len(results) == 1
-
-    r = gs.filter_date(start=thirty_two_days_ago)
-    results = r.json()['results']
-    assert len(results) == 2
-
-    r = gs.filter_date(start=thirty_two_days_ago, finish=two_days_ago)
-    results = r.json()['results']
-    assert len(results) == 1
-
-
-    # Get all possible fields
-    fields = gs.get_fields().json()['searchFields']
-    print([_['field'] for _ in fields])
-
-    #filter by cpt
-    uri_prefix = 'http://profit.poolparty.biz/profit_thesaurus/'
-    for el in fields:
-        field = el['field']
-        suffix = field.split('_')[-1]
-        uri = uri_prefix + suffix
-        pls = pp_calls.get_pref_labels(
-            uris=[uri], pid=profit_info.test_pid,
-            server=profit_info.test_server, auth_data=auth_data
-        )
-        if pls:
-            pl = pls[0]
-            r = gs.filter_cpt(cpt_uri=uri)
-            print('\n\n\n' + pl)
-            pprint.pprint(r.json()['results'])
+    pass
