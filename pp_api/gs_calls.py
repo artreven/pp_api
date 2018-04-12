@@ -55,7 +55,9 @@ class GraphSearch:
         :param uri: document uri
         :return: Boolean
         """
-        r = self.filter_id(id_=uri, search_space_id=search_space_id)
+        id_filter = self.filter_id(id_=uri)
+        r = self.search(search_space_id=search_space_id,
+                        search_filters=id_filter)
         return r.json()['total'] > 0
 
     def _create(self, id_, title, author, date, search_space_id,
@@ -117,6 +119,7 @@ class GraphSearch:
 
     def extract_and_create(self, pid, id_, title, author, date, text,
                            search_space_id,
+                           text_to_extract=None,
                            update=False):
         """
         Extract concepts from the text and create corresponding document with
@@ -131,8 +134,10 @@ class GraphSearch:
         :return:
         """
         pp = pp_calls.PoolParty(server=self.server, auth_data=self.auth_data)
+        if text_to_extract is None:
+            text_to_extract = text
         r = pp.extract(
-            pid=pid, text=text
+            pid=pid, text=text_to_extract
         )
         cpts = pp_calls.get_cpts_from_response(r)
         self.create_with_freqs(
