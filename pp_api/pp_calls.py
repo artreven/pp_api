@@ -23,7 +23,7 @@ class PoolParty:
                             status_forcelist=[500, 502, 503, 504])
             self.session.mount(self.server, HTTPAdapter(max_retries=retries))
 
-    def extract(self, text, pid, **kwargs):
+    def extract(self, text, pid, lang='en', **kwargs):
         """
         Make extract call using project determined by pid.
 
@@ -32,14 +32,16 @@ class PoolParty:
         :param text: text
         :param pid: id of project
         :param server: server url
+        :param lang: language
         :return: response object
         """
         tmp_file = tempfile.NamedTemporaryFile(delete=False, mode='w+b')
         tmp_file.write(str(text).encode('utf8'))
         tmp_file.seek(0)
-        return self.extract_from_file(tmp_file, pid, **kwargs)
+        return self.extract_from_file(tmp_file, pid, lang=lang, **kwargs)
 
-    def extract_from_file(self, file, pid, mb_time_factor=3, **kwargs):
+    def extract_from_file(self, file, pid, mb_time_factor=3, lang='en',
+                          **kwargs):
         """
         Make extract call using project determined by pid.
 
@@ -51,7 +53,7 @@ class PoolParty:
             'numberOfConcepts': 100000,
             'numberOfTerms': 100000,
             'projectId': pid,
-            'language': 'en',
+            'language': lang,
             'useTransitiveBroaderConcepts': True,
             'useRelatedConcepts': True,
             # 'sentimentAnalysis': True,
@@ -65,6 +67,7 @@ class PoolParty:
         try:
             if not hasattr(file, 'read'):
                 file = open(file, 'rb')
+            file_text = file.read()
             # Findout filesize
             file.seek(0, 2)  # Go to end of file
             f_size_mb = file.tell() / (1024 * 1024)
@@ -85,6 +88,8 @@ class PoolParty:
         try:
             r.raise_for_status()
         except HTTPError as e:
+            logging.error(data)
+            logging.error(file_text)
             logging.error(r.text)
             raise e
         return r
@@ -501,6 +506,21 @@ class PoolParty:
             pid=pid, source_uri=source_uri, target_uri=target_uri,
             relation_type='skos:related'
         )
+
+    def get_cpt_narrowers(self, pid, cpt_uri, transitive=True, lang=None):
+        suffix = '/PoolParty/api/thesaurus/{project}/narrowers'.format(
+            project=pid
+        )
+        data = {
+            'concept': cpt_uri,
+            'properties': 'all',
+            'transitive': transitive,
+        }
+        if lang is not None:
+            data['language'] = lang
+        r = self.session.get(self.server + suffix, params=data)
+        r.raise_for_status()
+        return r
 
 
 
