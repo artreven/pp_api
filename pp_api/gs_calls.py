@@ -46,7 +46,6 @@ class GraphSearch:
                 id_=id_,
                 search_space_id=search_space_id
             )
-        return r.json()['results']
 
     def in_gs(self, uri, search_space_id):
         """
@@ -159,7 +158,8 @@ class GraphSearch:
     def extract_and_update(self, *args, **kwargs):
         return self.extract_and_create(*args, update=True, **kwargs)
 
-    def search(self, search_space_id, search_filters=None, locale='en',
+    def search(self, search_space_id,
+               search_filters=None, locale='en', count=10000,
                **kwargs):
         """
 
@@ -175,7 +175,8 @@ class GraphSearch:
         data = {
             'searchSpaceId': search_space_id,
             'locale': locale,
-            'documentFacets': ['all']
+            'documentFacets': ['all'],
+            'count': count
         }
         if search_filters is not None:
             data.update({'searchFilters': search_filters})
