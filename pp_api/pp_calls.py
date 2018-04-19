@@ -515,7 +515,7 @@ class PoolParty:
         }
         if lang is not None:
             data['language'] = lang
-        r = self.session.post(self.server + suffix, data=data)
+        r = self.session.get(self.server + suffix, params=data)
         r.raise_for_status()
         return r
 
