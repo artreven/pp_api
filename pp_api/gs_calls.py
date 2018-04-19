@@ -103,7 +103,8 @@ class GraphSearch:
 
     def create_with_freqs(self, id_, title, author, date, cpts, search_space_id,
                           image_url=None,
-                          text=None, update=False):
+                          text=None, update=False,
+                          **kwargs):
         cpt_uris = [x['uri'] for x in cpts]
         cpt_freqs = {
             x['uri'].split("/")[-1]: x['frequencyInDocument'] for x in cpts
@@ -118,7 +119,8 @@ class GraphSearch:
             id_=id_, title=title, author=author, date=date,
             text=text, facets=cpt_facets,
             update=update, search_space_id=search_space_id,
-            dyn_txt_image=image_url
+            dyn_txt_image=image_url,
+            **kwargs
         )
 
     def extract_and_create(self, pid, id_, title, author, date, text,
@@ -126,7 +128,7 @@ class GraphSearch:
                            image_url=None,
                            text_to_extract=None,
                            update=False,
-                           lang='en'):
+                           lang='en', **kwargs):
         """
         Extract concepts from the text and create corresponding document with
         concept frequencies.
@@ -143,13 +145,14 @@ class GraphSearch:
         if text_to_extract is None:
             text_to_extract = text
         r = pp.extract(
-            pid=pid, text=text_to_extract, lang=lang
+            pid=pid, text=text_to_extract, lang=lang, **kwargs
         )
         cpts = pp_calls.get_cpts_from_response(r)
         self.create_with_freqs(
             id_=id_, title=title, author=author,
             date=date, text=text, cpts=cpts, update=update,
-            search_space_id=search_space_id, image_url=image_url
+            search_space_id=search_space_id, image_url=image_url,
+            **kwargs
         )
         return cpts
 

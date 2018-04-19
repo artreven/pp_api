@@ -67,6 +67,7 @@ class PoolParty:
         try:
             if not hasattr(file, 'read'):
                 file = open(file, 'rb')
+            file_text = file.read()
             # Findout filesize
             file.seek(0, 2)  # Go to end of file
             f_size_mb = file.tell() / (1024 * 1024)
@@ -87,6 +88,8 @@ class PoolParty:
         try:
             r.raise_for_status()
         except HTTPError as e:
+            logging.error(data)
+            logging.error(file_text)
             logging.error(r.text)
             raise e
         return r
