@@ -36,7 +36,7 @@ class GraphSearch:
         """
         Remove first 100000 document from GraphSearch.
         """
-        r = self._search(
+        r = self.search(
             count=100000,
             search_space_id=search_space_id
         )
@@ -46,7 +46,6 @@ class GraphSearch:
                 id_=id_,
                 search_space_id=search_space_id
             )
-        return r.json()['results']
 
     def in_gs(self, uri, search_space_id):
         """
@@ -55,7 +54,9 @@ class GraphSearch:
         :param uri: document uri
         :return: Boolean
         """
-        r = self.filter_id(id_=uri, search_space_id=search_space_id)
+        id_filter = self.filter_id(id_=uri)
+        r = self.search(search_space_id=search_space_id,
+                        search_filters=id_filter)
         return r.json()['total'] > 0
 
     def _create(self, id_, title, author, date, search_space_id,
@@ -85,7 +86,9 @@ class GraphSearch:
             'useExtraction': False,
             'searchSpaceId': search_space_id
         }
-        data.update(kwargs)
+        for k, v in kwargs.items():
+            if k is not None and v is not None:
+                data[k] = v
         r = self.session.post(
             self.server + suffix,
             json=data,
@@ -98,7 +101,9 @@ class GraphSearch:
         return r
 
     def create_with_freqs(self, id_, title, author, date, cpts, search_space_id,
-                          text=None, update=False):
+                          image_url=None,
+                          text=None, update=False,
+                          **kwargs):
         cpt_uris = [x['uri'] for x in cpts]
         cpt_freqs = {
             x['uri'].split("/")[-1]: x['frequencyInDocument'] for x in cpts
@@ -112,12 +117,17 @@ class GraphSearch:
         return self._create(
             id_=id_, title=title, author=author, date=date,
             text=text, facets=cpt_facets,
-            update=update, search_space_id=search_space_id
+            update=update, search_space_id=search_space_id,
+            dyn_txt_image=image_url,
+            **kwargs
         )
 
     def extract_and_create(self, pid, id_, title, author, date, text,
                            search_space_id,
-                           update=False):
+                           image_url=None,
+                           text_to_extract=None,
+                           update=False,
+                           lang='en', **kwargs):
         """
         Extract concepts from the text and create corresponding document with
         concept frequencies.
@@ -131,21 +141,25 @@ class GraphSearch:
         :return:
         """
         pp = pp_calls.PoolParty(server=self.server, auth_data=self.auth_data)
+        if text_to_extract is None:
+            text_to_extract = text
         r = pp.extract(
-            pid=pid, text=text
+            pid=pid, text=text_to_extract, lang=lang, **kwargs
         )
         cpts = pp_calls.get_cpts_from_response(r)
         self.create_with_freqs(
             id_=id_, title=title, author=author,
             date=date, text=text, cpts=cpts, update=update,
-            search_space_id=search_space_id
+            search_space_id=search_space_id, image_url=image_url,
+            **kwargs
         )
         return cpts
 
     def extract_and_update(self, *args, **kwargs):
         return self.extract_and_create(*args, update=True, **kwargs)
 
-    def search(self, search_space_id, search_filters=None, locale='en',
+    def search(self, search_space_id,
+               search_filters=None, locale='en', count=10000,
                **kwargs):
         """
 
@@ -161,7 +175,8 @@ class GraphSearch:
         data = {
             'searchSpaceId': search_space_id,
             'locale': locale,
-            'documentFacets': ['all']
+            'documentFacets': ['all'],
+            'count': count
         }
         if search_filters is not None:
             data.update({'searchFilters': search_filters})
@@ -179,7 +194,8 @@ class GraphSearch:
             raise e
         return r
 
-    def filter_full_text(self, query_str):
+    @staticmethod
+    def filter_full_text(query_str):
         search_filters = [
             {'field': 'full_text_search',
              'value': query_str,
@@ -187,28 +203,32 @@ class GraphSearch:
         ]
         return search_filters
 
-    def filter_cpt(self, cpt_uri):
+    @staticmethod
+    def filter_cpt(cpt_uri):
         search_filters = [
             {'field': 'dyn_uri_all_concepts',
              'value': cpt_uri}
         ]
         return search_filters
 
-    def filter_author(self, author):
+    @staticmethod
+    def filter_author(author):
         search_filters = [
             {'field': 'dyn_lit_author',
              'value': author}
         ]
         return search_filters
 
-    def filter_id(self, id_):
+    @staticmethod
+    def filter_id(id_):
         search_filters = [
             {'field': 'identifier',
              'value': id_}
         ]
         return search_filters
 
-    def filter_date(self, start_date=None, finish_date=None):
+    @staticmethod
+    def filter_date(start_date=None, finish_date=None):
         """
 
         :param start: datetime object
