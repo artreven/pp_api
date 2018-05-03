@@ -97,7 +97,8 @@ class PoolParty:
     @staticmethod
     def get_cpts_from_response(r):
         attributes = ['prefLabel', 'frequencyInDocument', 'uri',
-                      'transitiveBroaderConcepts', 'relatedConcepts']
+                      'transitiveBroaderConcepts', 'transitiveBroaderTopConcepts',
+                      'relatedConcepts']
 
         extr_cpts = []
         if r is None:
