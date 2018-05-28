@@ -9,7 +9,7 @@ from time import time
 
 from pp_api import utils as u
 
-root_logger = logging.getLogger('root')
+module_logger = logging.getLogger(__name__)
 
 
 class PoolParty:
@@ -79,10 +79,10 @@ class PoolParty:
                 timeout=(3.05, int(27 * mb_time_factor * (1 + f_size_mb)))
             )
         except Exception as e:
-            root_logger.error(traceback.format_exc())
+            module_logger.error(traceback.format_exc())
         finally:
             file.close()
-        root_logger.debug('call took {:0.3f}'.format(time() - start))
+        module_logger.debug('call took {:0.3f}'.format(time() - start))
         if not 'r' in locals():
             return None
         try:
@@ -97,8 +97,9 @@ class PoolParty:
     @staticmethod
     def get_cpts_from_response(r):
         attributes = ['prefLabel', 'frequencyInDocument', 'uri',
-                      'transitiveBroaderConcepts', 'relatedConcepts']
-
+                      'transitiveBroaderConcepts', 'transitiveBroaderTopConcepts',
+                      'relatedConcepts']
+        # matchingLabels is checked and saved as well
         extr_cpts = []
         if r is None:
             return extr_cpts
@@ -193,7 +194,7 @@ class PoolParty:
                 break
 
         if not found:
-            root_logger.warning("No terms found in this document!")
+            module_logger.warning("No terms found in this document!")
             return extr_terms
 
         assert found, [extr_terms, list(term_container.keys()), r.json()]
@@ -561,7 +562,7 @@ def extract_from_file(file, pid, server, auth_data=None, session=None,
     :param server: server url
     :return: response object
     """
-    root_logger.warning(
+    module_logger.warning(
         'Please, consider switching to using PoolParty object for making calls to PoolParty.')
     data = {
         'numberOfConcepts': 100000,
@@ -596,10 +597,10 @@ def extract_from_file(file, pid, server, auth_data=None, session=None,
             timeout=(3.05, int(27 * mb_time_factor*(1 + f_size_mb )))
         )
     except Exception as e:
-        root_logger.error(traceback.format_exc())
+        module_logger.error(traceback.format_exc())
     finally:
         file.close()
-    root_logger.debug('call took {:0.3f}'.format(time() - start))
+    module_logger.debug('call took {:0.3f}'.format(time() - start))
     if not 'r' in locals():
         return None
     try:
@@ -644,7 +645,7 @@ def get_cpts_from_response(r):
 def extract_shadow_cpts(text, shadow_cpts_corpus_id, pid, server,
                         auth_data=None, session=None, max_retries=None,
                         **kwargs):
-    root_logger.warning(
+    module_logger.warning(
         'Please, consider switching to using PoolParty object for making calls to PoolParty.')
     r = extract(text, pid, server,
                 auth_data, session, max_retries,
@@ -699,7 +700,7 @@ def get_terms_from_response(r):
             break
 
     if not found:
-        root_logger.warning("No terms found in this document!")
+        module_logger.warning("No terms found in this document!")
         return extr_terms
 
     assert found, [extr_terms, list(term_container.keys()), r.json()]
@@ -731,7 +732,7 @@ def get_pref_labels(uris, pid, server, auth_data=None, session=None):
     :param server: server url
     :return: response object
     """
-    root_logger.warning(
+    module_logger.warning(
         'Please, consider switching to using PoolParty object for making calls to PoolParty.')
     data = {
         'concepts': uris,
@@ -758,7 +759,7 @@ def get_cpt_corpus_freqs(corpus_id, server, pid, auth_data=None, session=None):
     :param server: server url
     :return: response object
     """
-    root_logger.warning(
+    module_logger.warning(
         'Please, consider switching to using PoolParty object for making calls to PoolParty.')
     data = {
         'corpusId': corpus_id,
@@ -790,7 +791,7 @@ def get_cpt_path(cpt_uri, server, pid, auth_data=None, session=None):
     :param server: server url
     :return: response object
     """
-    root_logger.warning(
+    module_logger.warning(
         'Please, consider switching to using PoolParty object for making calls to PoolParty.')
     cpt_uri = str(cpt_uri)
     data = {
@@ -810,7 +811,7 @@ def get_cpt_path(cpt_uri, server, pid, auth_data=None, session=None):
 
 def get_term_coocs(term_str, corpus_id, server, pid,
                    auth_data=None, session=None):
-    root_logger.warning(
+    module_logger.warning(
         'Please, consider switching to using PoolParty object for making calls to PoolParty.')
     suffix = '/PoolParty/api/corpusmanagement/' \
              '{pid}/results/cooccurrence/term'.format(
