@@ -4,7 +4,6 @@ from pathlib import Path
 from decouple import config
 
 from pp_api import *
-from pp_api import nif_annotator as na
 
 
 class TestPP():
@@ -42,13 +41,9 @@ class TestPP():
 
     def test_nif_annotation(self):
         text_path = (self.data_folder / 'question_1727.txt')
-        annotator = na.NIFAnnotator(pp_url = self.pp.server,
-                                    pp_usr = self.pp.auth_data[0],
-                                    pp_pwd = self.pp.auth_data[1],
-                                    pp_pid=self.extract_args['pid'])
         with text_path.open() as f:
             text = f.read()
-        nif_output = annotator.create_annotated_nif(text)
+        nif_output = self.pp.extract2nif(text=text, pid=self.extract_args['pid'])
         assert len(nif_output.split("nif:Phrase")) > 0
 
     def test_shadow_cpts_extraction(self):
