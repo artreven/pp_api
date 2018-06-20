@@ -1,7 +1,12 @@
+import logging
+
 from requests.exceptions import HTTPError
 
 from pp_api import utils as u
 from pp_api import pp_calls
+
+
+module_logger = logging.getLogger(__name__)
 
 
 class GraphSearch:
@@ -25,11 +30,18 @@ class GraphSearch:
             }
         else:
             assert 0
+        dest_url = self.server + suffix
         r = self.session.post(
-            self.server + suffix,
+            dest_url,
             json=data,
         )
-        r.raise_for_status()
+        try:
+            r.raise_for_status()
+        except Exception as e:
+            msg = 'JSON data of the failed POST request: {}\n'.format(data)
+            msg += 'URL of the failed POST request: {}'.format(dest_url)
+            module_logger.error(msg)
+            raise e
         return r
 
     def clean(self, search_space_id):
@@ -89,14 +101,17 @@ class GraphSearch:
         for k, v in kwargs.items():
             if k is not None and v is not None:
                 data[k] = v
+        dest_url = self.server + suffix
         r = self.session.post(
-            self.server + suffix,
+            dest_url,
             json=data,
         )
         try:
             r.raise_for_status()
-        except HTTPError as e:
-            print(r.text)
+        except Exception as e:
+            msg = 'JSON data of the failed POST request: {}\n'.format(data)
+            msg += 'URL of the failed POST request: {}'.format(dest_url)
+            module_logger.error(msg)
             raise e
         return r
 
@@ -183,15 +198,17 @@ class GraphSearch:
             data.update({'searchFilters': search_filters})
         if kwargs:
             data.update(**kwargs)
+        dest_url = self.server + suffix
         r = self.session.post(
-            self.server + suffix,
+            dest_url,
             json=data,
         )
         try:
             r.raise_for_status()
-        except HTTPError as e:
-            print(r.request.__dict__)
-            print(r.text)
+        except Exception as e:
+            msg = 'JSON data of the failed POST request: {}\n'.format(data)
+            msg += 'URL of the failed POST request: {}'.format(dest_url)
+            module_logger.error(msg)
             raise e
         return r
 
