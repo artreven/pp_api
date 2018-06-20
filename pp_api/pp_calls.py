@@ -9,7 +9,8 @@ import tempfile
 import logging
 import traceback
 from time import time
-import NIF21
+
+from nif.annotation import NIFDocument
 
 from pp_api import utils as u
 
@@ -225,22 +226,14 @@ class PoolParty:
         The original document and the annotations are returned as NIF.
 
         :param text:
+        :param cpts:
         :param doc_uri:
-        :return:
+        :return: NIFDocument
         """
-        nif21 = NIF21.NIF21()
-        nif21.context(doc_uri, 0, len(text), text)
-
+        nif_doc = NIFDocument.from_text(text, uri=doc_uri)
         for cpt in cpts:
-            cpt_uri = cpt['uri']
-            cpt_label = cpt['prefLabel']
-            for matches in cpt['matchings']:
-                for match in matches['positions']:
-                    start_index, end_index = match
-                    nif21.bean(cpt_label, start_index, end_index,
-                               None, 1, None, cpt_uri, None)
-
-        return nif21.turtle()
+            nif_doc.add_extracted_cpt(cpt)
+        return nif_doc
 
     def extract2nif(self, text_or_filename, pid, lang='en',
                     doc_uri="http://example.doc/" + str(uuid.uuid4()),
