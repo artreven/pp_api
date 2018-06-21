@@ -7,6 +7,9 @@ requirements = [x for x in requirements if ((len(x) > 0)
 requirements = [x.replace("python-", "python_") for x in requirements]
 dependencies = ["https://github.com/semantic-web-company/nif/tarball/master#egg=nif"]
 
+with open('requirements.txt', 'r') as f:
+    requirements = f.read().splitlines()
+
 setup(
     name='pp_api',
     version='0.1dev',
