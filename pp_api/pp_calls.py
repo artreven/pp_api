@@ -1,3 +1,6 @@
+import os
+import uuid
+
 import requests
 from requests.exceptions import HTTPError
 from requests.packages.urllib3.util.retry import Retry
@@ -6,6 +9,8 @@ import tempfile
 import logging
 import traceback
 from time import time
+
+from nif.annotation import NIFDocument
 
 from pp_api import utils as u
 
@@ -213,6 +218,36 @@ class PoolParty:
     @staticmethod
     def get_sentiment_from_response(r):
         return r.json()["sentiments"][0]["score"]
+
+    @staticmethod
+    def format_nif(text, cpts, doc_uri="http://example.doc/"+str(uuid.uuid4())):
+        """
+        Annotates a document with entities found in this objects thesaurus.
+        The original document and the annotations are returned as NIF.
+
+        :param text:
+        :param cpts:
+        :param doc_uri:
+        :return: NIFDocument
+        """
+        nif_doc = NIFDocument.from_text(text, uri=doc_uri)
+        for cpt in cpts:
+            nif_doc.add_extracted_cpt(cpt)
+        return nif_doc
+
+    def extract2nif(self, text_or_filename, pid, lang='en',
+                    doc_uri="http://example.doc/" + str(uuid.uuid4()),
+                    **kwargs):
+        if os.path.isfile(text_or_filename):
+            with open(text_or_filename) as f:
+                text = f.read()
+            r = self.extract_from_file(text_or_filename, pid, lang=lang,
+                                       **kwargs)
+        else:
+            text = text_or_filename
+            r = self.extract(text_or_filename, pid, lang=lang, **kwargs)
+        cpts = self.get_cpts_from_response(r)
+        return self.format_nif(text, cpts, doc_uri=doc_uri)
 
     def get_pref_labels(self, uris, pid):
         """
