@@ -3,4 +3,4 @@ numpy
 rdflib
 SPARQLWrapper
 python_decouple
--e git+git://github.com/semantic-web-company/nif.git#egg=nif
+
