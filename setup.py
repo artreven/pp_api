@@ -4,7 +4,7 @@ with open('requirements.txt', 'r') as f:
     requirements = f.read().splitlines()
 requirements = [x for x in requirements
                 if ((len(x) > 0) and (x[0] != '-') and ("+" not in x))]
-requirements = [x.replace("python-", "python_") for x in requirements]
+requirements = [x.replace("python-", "python_") for x in requirements]+["nif"]
 dependencies = ["https://github.com/semantic-web-company/nif/tarball/master#egg=nif"]
 
 setup(
@@ -13,6 +13,6 @@ setup(
     description='Library for accessing PoolParty APIs',
     packages=['pp_api'],
     license='MIT',
-    install_requires=requirements,
-    dependency_links=dependencies
+    dependency_links=dependencies,
+    install_requires=requirements,    
 )
