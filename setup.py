@@ -9,7 +9,7 @@ dependencies = ["https://github.com/semantic-web-company/nif/tarball/master#egg=
 
 setup(
     name='pp_api',
-    version='profit-v14',
+    version='profit-v15',
     description='Library for accessing PoolParty APIs',
     packages=['pp_api'],
     license='MIT',
