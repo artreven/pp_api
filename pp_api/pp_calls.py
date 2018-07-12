@@ -10,11 +10,18 @@ import logging
 import traceback
 from time import time
 
-from nif.annotation import NIFDocument
+module_logger = logging.getLogger(__name__)
+
+imported_nif = False
+try:
+    from nif.annotation import NIFDocument
+    imported_nif = True
+except ImportError:
+    module_logger.debug("Nif module can not be imported")
 
 from pp_api import utils as u
 
-module_logger = logging.getLogger(__name__)
+
 
 
 class PoolParty:
@@ -230,6 +237,10 @@ class PoolParty:
         :param doc_uri:
         :return: NIFDocument
         """
+        if not imported_nif:
+            module_logger.error("
+                          nif module needs to be imported to use this method ")
+            raise ImportError
         nif_doc = NIFDocument.from_text(text, uri=doc_uri)
         for cpt in cpts:
             nif_doc.add_extracted_cpt(cpt)
@@ -596,4 +607,3 @@ class PoolParty:
 
 if __name__ == '__main__':
     pass
-
