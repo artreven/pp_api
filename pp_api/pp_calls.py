@@ -17,7 +17,7 @@ try:
     from nif.annotation import NIFDocument
     imported_nif = True
 except ImportError:
-    module_logger.debug("""Nif module can not be imported. Please import with\n
+    module_logger.warning("""Nif module can not be imported. To import use\n
       pip install -e git+git://github.com/semantic-web-company/nif.git#egg=nif\n
       """)
 
@@ -239,13 +239,12 @@ class PoolParty:
         :param doc_uri:
         :return: NIFDocument
         """
-        if not imported_nif:
-
-            module_logger.error("""
+        if not imported_nif:            
+            raise ImportError("""
                           nif module needs to be imported to use this method\n
                           Please import with\n
 pip install -e git+git://github.com/semantic-web-company/nif.git#egg=nif\n""")
-            raise ImportError
+
         nif_doc = NIFDocument.from_text(text, uri=doc_uri)
         for cpt in cpts:
             nif_doc.add_extracted_cpt(cpt)
