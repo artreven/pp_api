@@ -239,8 +239,8 @@ class PoolParty:
         :return: NIFDocument
         """
         if not imported_nif:
-            module_logger.error("
-                          nif module needs to be imported to use this method ")
+            module_logger.error("""
+                          nif module needs to be imported to use this method""")
             raise ImportError
         nif_doc = NIFDocument.from_text(text, uri=doc_uri)
         for cpt in cpts:
