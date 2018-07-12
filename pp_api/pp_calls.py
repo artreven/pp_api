@@ -17,7 +17,8 @@ try:
     from nif.annotation import NIFDocument
     imported_nif = True
 except ImportError:
-    module_logger.debug("Nif module can not be imported")
+    module_logger.debug("""Nif module can not be imported. Please import  \n
+      -e git+git://github.com/semantic-web-company/nif.git#egg=nif  """)
 
 from pp_api import utils as u
 
