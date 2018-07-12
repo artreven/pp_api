@@ -242,7 +242,9 @@ class PoolParty:
         if not imported_nif:
 
             module_logger.error("""
-                          nif module needs to be imported to use this method""")
+                          nif module needs to be imported to use this method\n
+                          Please import with\n
+pip install -e git+git://github.com/semantic-web-company/nif.git#egg=nif\n""")
             raise ImportError
         nif_doc = NIFDocument.from_text(text, uri=doc_uri)
         for cpt in cpts:
