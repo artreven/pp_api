@@ -17,8 +17,9 @@ try:
     from nif.annotation import NIFDocument
     imported_nif = True
 except ImportError:
-    module_logger.debug("""Nif module can not be imported. Please import  \n
-      -e git+git://github.com/semantic-web-company/nif.git#egg=nif  """)
+    module_logger.debug("""Nif module can not be imported. Please import with\n
+      pip install -e git+git://github.com/semantic-web-company/nif.git#egg=nif\n
+      """)
 
 from pp_api import utils as u
 
@@ -239,6 +240,7 @@ class PoolParty:
         :return: NIFDocument
         """
         if not imported_nif:
+
             module_logger.error("""
                           nif module needs to be imported to use this method""")
             raise ImportError
