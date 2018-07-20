@@ -85,6 +85,8 @@ class GraphSearch:
         """
         if text_limit and len(text) > 12048:
             text = text[:12000]
+            module_logger.warning('Text was too long ({} chars), has been '
+                                  'shortened tp 12000 chars'.format(len(text)))
         if not update:
             suffix = '/GraphSearch/api/content/create'
         else:
@@ -99,7 +101,7 @@ class GraphSearch:
             'searchSpaceId': search_space_id
         }
         for k, v in kwargs.items():
-            if k is not None and v is not None:
+            if k is not None and v is not None and v != [None]:
                 data[k] = v
         dest_url = self.server + suffix
         r = self.session.post(
