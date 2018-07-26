@@ -606,7 +606,8 @@ pip install -e git+git://github.com/semantic-web-company/nif.git#egg=nif\n""")
             data['language'] = lang
         r = self.session.get(self.server + suffix, params=data)
         r.raise_for_status()
-        return r
+        ans = r.json()
+        return ans
 
 
 if __name__ == '__main__':
