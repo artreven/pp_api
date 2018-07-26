@@ -39,7 +39,8 @@ class GraphSearch:
             r.raise_for_status()
         except Exception as e:
             msg = 'JSON data of the failed POST request: {}\n'.format(data)
-            msg += 'URL of the failed POST request: {}'.format(dest_url)
+            msg += 'URL of the failed POST request: {}\n'.format(dest_url)
+            msg += 'Response text: {}'.format(r.text)
             module_logger.error(msg)
             raise e
         return r
@@ -112,7 +113,8 @@ class GraphSearch:
             r.raise_for_status()
         except Exception as e:
             msg = 'JSON data of the failed POST request: {}\n'.format(data)
-            msg += 'URL of the failed POST request: {}'.format(dest_url)
+            msg += 'URL of the failed POST request: {}\n'.format(dest_url)
+            msg += 'Response text: {}'.format(r.text)
             module_logger.error(msg)
             raise e
         return r
@@ -194,7 +196,8 @@ class GraphSearch:
             'searchSpaceId': search_space_id,
             'locale': locale,
             'documentFacets': ['all'],
-            'count': count
+            'count': count,
+            "searchFacets": [{"field": "dyn_uri_all_concepts"}]
         }
         if search_filters is not None:
             data.update({'searchFilters': search_filters})
@@ -209,7 +212,8 @@ class GraphSearch:
             r.raise_for_status()
         except Exception as e:
             msg = 'JSON data of the failed POST request: {}\n'.format(data)
-            msg += 'URL of the failed POST request: {}'.format(dest_url)
+            msg += 'URL of the failed POST request: {}\n'.format(dest_url)
+            msg += 'Response text: {}'.format(r.text)
             module_logger.error(msg)
             raise e
         return r
@@ -270,15 +274,16 @@ class GraphSearch:
 
     def get_fields(self):
         suffix = '/GraphSearch/admin/config/fields'
+        dest_url = self.server + suffix
         r = self.session.get(
-            self.server + suffix,
+            dest_url,
         )
         try:
             r.raise_for_status()
         except HTTPError as e:
-            print(r.request.__dict__)
-            print(r.text)
-            raise e
+            msg = 'URL of the failed POST request: {}\n'.format(dest_url)
+            msg += 'Response text: {}'.format(r.text)
+            module_logger.error(msg)
         return r
 
     def add_field(self, space_id, field, label):
@@ -307,16 +312,19 @@ class GraphSearch:
             'searchSpaceId': space_id,
             'field': field
         }
+        dest_url = self.server + suffix
         r = self.session.post(
-            self.server + suffix,
+            dest_url,
             params=data,
             # data=data
         )
         try:
             r.raise_for_status()
         except HTTPError as e:
-            print(r.request.__dict__)
-            print(r.text)
+            msg = 'JSON data of the failed POST request: {}\n'.format(data)
+            msg += 'URL of the failed POST request: {}\n'.format(dest_url)
+            msg += 'Response text: {}'.format(r.text)
+            module_logger.error(msg)
             raise e
         return r
 
