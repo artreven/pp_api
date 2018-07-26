@@ -23,7 +23,7 @@ class TestPP():
         r = self.pp.extract_from_file(
             text_path.open(), **self.extract_args
         )
-        terms = get_terms_from_response(r)
+        terms = pp_api.PoolParty.get_terms_from_response(r)
         # print(r.json())
         assert(terms)
 
