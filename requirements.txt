@@ -3,4 +3,3 @@ numpy
 rdflib
 SPARQLWrapper
 python_decouple
--e git+git://github.com/Project-PROFIT/nif.git@origin/develop#egg=nif

@@ -10,11 +10,20 @@ import logging
 import traceback
 from time import time
 
-from nif.annotation import NIFDocument
+module_logger = logging.getLogger(__name__)
+
+imported_nif = False
+try:
+    from nif.annotation import NIFDocument
+    imported_nif = True
+except ImportError:
+    module_logger.warning("""Nif module can not be imported. To import use\n
+      pip install -e git+git://github.com/semantic-web-company/nif.git#egg=nif\n
+      """)
 
 from pp_api import utils as u
 
-module_logger = logging.getLogger(__name__)
+
 
 
 class PoolParty:
@@ -230,6 +239,12 @@ class PoolParty:
         :param doc_uri:
         :return: NIFDocument
         """
+        if not imported_nif:            
+            raise ImportError("""
+                          nif module needs to be imported to use this method\n
+                          Please import with\n
+pip install -e git+git://github.com/semantic-web-company/nif.git#egg=nif\n""")
+
         nif_doc = NIFDocument.from_text(text, uri=doc_uri)
         for cpt in cpts:
             nif_doc.add_extracted_cpt(cpt)
@@ -591,9 +606,9 @@ class PoolParty:
             data['language'] = lang
         r = self.session.get(self.server + suffix, params=data)
         r.raise_for_status()
-        return r
+        ans = r.json()
+        return ans
 
 
 if __name__ == '__main__':
     pass
-
