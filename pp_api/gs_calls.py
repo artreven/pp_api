@@ -137,7 +137,7 @@ class GraphSearch:
             id_=id_, title=title, author=author, date=date,
             text=text, facets=cpt_facets,
             update=update, search_space_id=search_space_id,
-            dyn_txt_image=[image_url],
+            dyn_txt_imageUrl=[image_url],
             **kwargs
         )
 
