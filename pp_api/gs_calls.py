@@ -165,7 +165,7 @@ class GraphSearch:
         r = pp.extract(
             pid=pid, text=text_to_extract, lang=lang, **kwargs
         )
-        cpts = pp_calls.get_cpts_from_response(r)
+        cpts = pp.get_cpts_from_response(r)
         self.create_with_freqs(
             id_=id_, title=title, author=author,
             date=date, text=text, cpts=cpts, update=update,
