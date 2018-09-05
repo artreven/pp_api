@@ -81,9 +81,6 @@ class PoolParty:
         data.update(kwargs)
         target_url = self.server + '/extractor/api/extract'
         start = time()
-        countedTimeout = (3.05, int(27 * mb_time_factor * (1 + f_size_mb)))
-        if self.timeout and self.timeout < countedTimeout:
-            countedTimeout = self.timeout
         try:
             if not hasattr(file, 'read'):
                 file = open(file, 'rb')
@@ -92,6 +89,9 @@ class PoolParty:
             file.seek(0, 2)  # Go to end of file
             f_size_mb = file.tell() / (1024 * 1024)
             file.seek(0)  # Go to start of file
+            countedTimeout = (3.05, int(27 * mb_time_factor * (1 + f_size_mb)))
+            if self.timeout and self.timeout < countedTimeout:
+                countedTimeout = self.timeout
             r = self.session.post(
                 target_url,
                 data=data,
