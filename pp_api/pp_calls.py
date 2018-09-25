@@ -527,8 +527,17 @@ pip install -e git+git://github.com/semantic-web-company/nif.git#egg=nif\n""")
         ans = r.json()
         return ans
 
-    def add_new_concept(self, pid, pref_label, parent=None):
-        suffix = '/PoolParty/api/thesaurus/{project}/createConcept'.format(
+    def add_new_concept(self, pid, pref_label, parent=None, suffix=None):
+        """
+        Add a new concept to the taxonomy (API call: createConcept)
+
+        :param pid:
+        :param pref_label: Preferred label in the default language
+        :param parent: URI of the parent Concept Scheme or Concept
+        :param suffix: When URI creation is manual, sets the last URI component.
+        :return:
+        """
+        urlpath = '/PoolParty/api/thesaurus/{project}/createConcept'.format(
             project=pid
         )
         data = {
@@ -536,8 +545,11 @@ pip install -e git+git://github.com/semantic-web-company/nif.git#egg=nif\n""")
             'parent': (parent if parent is not None else
                        self.get_schemes(pid)[0]['uri'])
         }
-        target_url = self.server + suffix
-        r = self.session.post(target_url, data=data,timeout=self.timeout)
+        if suffix:
+            data["suffix"] = suffix
+
+        target_url = os.path.join(self.server, urlpath)
+        r = self.session.post(target_url, data=data, timeout=self.timeout)
         try:
             r.raise_for_status()
         except Exception as e:
@@ -618,6 +630,103 @@ pip install -e git+git://github.com/semantic-web-company/nif.git#egg=nif\n""")
         r.raise_for_status()
         ans = r.json()
         return ans
+
+    def get_childconcepts(self, pid, parent,
+                          properties=None, language=None, transitive=None, workflowStatus=None):
+        """
+        Implements the API call GET /thesaurus/{project}/childconcepts: Return
+        children or descendants in the skos:narrower hierarchy
+
+        :param pid:
+        :param parent:
+        :param properties:  None (default) | "all" | list of properties (URIs) to fetch
+        :param language: Only Concept Schemes with labels in this locale will
+                be displayed. If None (default), use the default locale of the project.
+        :param transitive: If true, return all descendants; otherwise only children.
+                Default: False.
+        :param workflowStatus: Include workflow status information?
+                Default: False
+        :return:
+        """
+
+        suffix = '/PoolParty/api/thesaurus/{project}/childconcepts'.format(project=pid)
+        data = dict(parent=parent)
+
+        if properties == "all":
+            data["properties"] = properties
+        elif properties:
+            data["properties"] = list(properties)
+        # if None, simply leave it out
+
+        if language:
+            data["language"] = language
+        if transitive:
+            data["transitive"] = True
+        if workflowStatus:
+            data["workflowStates"] = True
+
+        r = self.session.get(self.server + suffix, params=data)
+        r.raise_for_status()
+        result = r.json()
+        return result
+
+    def snapshot(self, pid, system=False, note=None):
+        """
+        Trigger a snapshot of the project specified by `pid`.
+
+        :return: JSON structure with status report
+        """
+        suffix = '/PoolParty/api/projects/{project}/snapshot'.format(
+            project=pid
+        )
+
+        data = { 'system': system }
+        if note:
+            data["note"] = note
+
+        r = self.session.post(self.server + suffix, data=data)
+        r.raise_for_status()
+        result = r.json()
+        return result
+
+    def add_literal(self, pid, concept, property, label, language=None):
+        """The api addLiteral call. Was already implemented under another name..."""
+
+        return self.add_label(pid, concept, label_value=label,
+                              label_type=property, language=language)
+
+    def add_custom_attribute(self, pid, resource, property, value, language=None, datatype=None):
+
+        urlpath = '/PoolParty/api/thesaurus/{project}/addCustomAttribute'.format(
+            project=pid
+        )
+        data = {
+            'resource': resource,
+            'property': property,
+            'value': value,
+        }
+        if language:
+            data["language"] = language
+        if datatype:
+            data["datatype"] = datatype
+
+        r = self.session.post(self.server + urlpath, data=data)
+        r.raise_for_status()
+        return r
+
+    def add_custom_relation(self, pid, source, property, target):
+
+        urlpath = '/PoolParty/api/thesaurus/{project}/addCustomRelation'.format(
+            project=pid
+        )
+        data = {
+            'source': source,
+            'property': property,
+            'target': target,
+        }
+        r = self.session.post(self.server + urlpath, data=data)
+        r.raise_for_status()
+        return r
 
 
 if __name__ == '__main__':
