@@ -10,11 +10,14 @@ module_logger = logging.getLogger(__name__)
 
 
 class GraphSearch:
-    def __init__(self, server, auth_data=None, session=None):
+    timeout = None
+
+    def __init__(self, server, auth_data=None, session=None, timeout=None):
         self.server = server
         session = u.get_session(session, auth_data)
         self.auth_data = auth_data
         self.session = session
+        self.timeout = timeout
 
     def delete(self, search_space_id, id_=None, source=None):
         if id_ is not None:
@@ -34,6 +37,7 @@ class GraphSearch:
         r = self.session.post(
             dest_url,
             json=data,
+            timeout=self.timeout
         )
         try:
             r.raise_for_status()
@@ -108,6 +112,7 @@ class GraphSearch:
         r = self.session.post(
             dest_url,
             json=data,
+            timeout=self.timeout
         )
         try:
             r.raise_for_status()
@@ -165,7 +170,7 @@ class GraphSearch:
         r = pp.extract(
             pid=pid, text=text_to_extract, lang=lang, **kwargs
         )
-        cpts = pp_calls.get_cpts_from_response(r)
+        cpts = pp.get_cpts_from_response(r)
         self.create_with_freqs(
             id_=id_, title=title, author=author,
             date=date, text=text, cpts=cpts, update=update,
@@ -207,6 +212,7 @@ class GraphSearch:
         r = self.session.post(
             dest_url,
             json=data,
+            timeout=self.timeout
         )
         try:
             r.raise_for_status()
@@ -277,6 +283,7 @@ class GraphSearch:
         dest_url = self.server + suffix
         r = self.session.get(
             dest_url,
+            timeout=self.timeout
         )
         try:
             r.raise_for_status()
@@ -296,6 +303,7 @@ class GraphSearch:
         r = self.session.post(
             self.server + suffix,
             params=data,
+            timeout=self.timeout
             # data=data
         )
         try:
@@ -316,6 +324,7 @@ class GraphSearch:
         r = self.session.post(
             dest_url,
             params=data,
+            timeout=self.timeout
             # data=data
         )
         try:

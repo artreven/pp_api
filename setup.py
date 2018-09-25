@@ -8,11 +8,11 @@ requirements = [x for x in requirements
                      and ("+" not in x)
                      and (x[0] != "# ")) ]
 requirements = [x.replace("python-", "python_") for x in requirements]
-dependencies = ["https://github.com/semantic-web-company/nif/tarball/master#egg=nif-0.0.0"]
+dependencies = ["https://github.com/Project-PROFIT/nif.git@origin/master#egg=nif"]
 
 setup(
     name='pp_api',
-    version='profit-v15',
+    version='profit-v18',
     description='Library for accessing PoolParty APIs',
     packages=['pp_api'],
     license='MIT',
