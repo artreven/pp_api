@@ -105,7 +105,12 @@ class PoolParty:
             msg = 'JSON data of the failed POST request: {}\n'.format(data)
             msg += 'URL of the failed POST request: {}'.format(target_url)
             module_logger.error(msg)
-            raise e
+            response = r.json()
+            if "errorMessage" in response:
+                extra = "API error message: {}\n".format(response["errorMessage"])
+                raise type(e)(str(e) + "\n" + extra)
+            else:
+                raise e
         return r
 
     @staticmethod
