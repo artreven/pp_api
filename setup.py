@@ -3,10 +3,10 @@ from setuptools import setup
 with open('requirements.txt', 'r') as f:
     requirements = f.read().splitlines()
 requirements = [x for x in requirements
-                if ((len(x) > 0)
-                     and (x[0] != '-')
-                     and ("+" not in x)
-                     and (x[0] != "# ")) ]
+                if ((len(x.strip()) > 0)
+                     and (x[0] != '-')       # -e URL?
+                     and ("+" not in x)      # ??
+                     and (x[:2] != "# ")) ]  # comment lines
 requirements = [x.replace("python-", "python_") for x in requirements]
 dependencies = ["https://github.com/Project-PROFIT/nif.git@origin/master#egg=nif"]
 
