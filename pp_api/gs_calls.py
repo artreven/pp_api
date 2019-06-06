@@ -268,7 +268,7 @@ class GraphSearch:
         start_str = (start_date.strftime('%Y-%m-%dT%H:%M:%S.000Z')
                      if start_date
                      else "1970-01-01T23:00:00.000Z")
-        finish_str = (finish_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+        finish_str = (finish_date.strftime('%Y-%m-%dT%H:%M:%S.000Z')
                       if finish_date
                       else "NOW")
         date_str = '[{start} TO {finish}]'.format(start=start_str, finish=finish_str)

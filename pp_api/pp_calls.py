@@ -24,8 +24,6 @@ except ImportError:
 from pp_api import utils as u
 
 
-
-
 class PoolParty:
     timeout = None
 
@@ -40,7 +38,89 @@ class PoolParty:
             self.session.mount(self.server, HTTPAdapter(max_retries=retries))
         self.timeout = timeout
 
-    def extract(self, text, pid, lang='en', **kwargs):
+    # def extract(self, text, pid, lang='en', **kwargs):
+    #     """
+    #     Make extract call using project determined by pid.
+    #
+    #     :param auth_data:
+    #     :param session:
+    #     :param text: text
+    #     :param pid: id of project
+    #     :param server: server url
+    #     :param lang: language
+    #     :return: response object
+    #     """
+    #     tmp_file = tempfile.NamedTemporaryFile(delete=False, mode='w+b')
+    #     tmp_file.write(str(text).encode('utf8'))
+    #     tmp_file.seek(0)
+    #     return self.extract_from_file(tmp_file, pid, lang=lang, **kwargs)
+    #
+    # def extract_from_file(self, file, pid, mb_time_factor=3, lang='en',
+    #                       **kwargs):
+    #     """
+    #     Make extract call using project determined by pid.
+    #
+    #     :param text: text
+    #     :param pid: id of project
+    #     :return: response object
+    #     """
+    #     data = {
+    #         'numberOfConcepts': 100000,
+    #         'numberOfTerms': 100000,
+    #         'projectId': pid,
+    #         'language': lang,
+    #         'useTransitiveBroaderConcepts': True,
+    #         'useRelatedConcepts': True,
+    #         # 'sentimentAnalysis': True,
+    #         'filterNestedConcepts': True,
+    #         'showMatchingPosition': True,
+    #         'showMatchingDetails': True
+    #     }
+    #     data.update(kwargs)
+    #     target_url = self.server + '/extractor/api/extract'
+    #     start = time()
+    #     try:
+    #         if not hasattr(file, 'read'):
+    #             file = open(file, 'rb')
+    #         file_text = file.read()
+    #         file.seek(0)
+    #         # Findout filesize
+    #         # file.seek(0, 2)  # Go to end of file
+    #         # f_size_mb = file.tell() / (1024 * 1024)
+    #         # file.seek(0)  # Go to start of file
+    #         # countedTimeout = (3.05, int(27 * mb_time_factor * (1 + f_size_mb)))
+    #         # if self.timeout and self.timeout < countedTimeout:
+    #         #     countedTimeout = self.timeout
+    #         r = self.session.post(
+    #             target_url,
+    #             data=data,
+    #             files={'file': file},
+    #             timeout=self.timeout
+    #         )
+    #     except Exception as e:
+    #         module_logger.error(traceback.format_exc())
+    #     finally:
+    #         file.close()
+    #     module_logger.debug('call took {:0.3f}'.format(time() - start))
+    #     if not 'r' in locals():
+    #         return None
+    #     try:
+    #         r.raise_for_status()
+    #     except Exception as e:
+    #         msg = 'JSON data of the failed POST request: {}\n'.format(data)
+    #         msg += 'File contents: {}\n'.format(file_text)
+    #         msg += 'URL of the failed POST request: {}\n'.format(target_url)
+    #         msg += '{}'.format(r.content)
+    #         module_logger.error(msg)
+    #         response = r.json()
+    #         if "errorMessage" in response:
+    #             extra = "API error message: {}\n".format(response["errorMessage"])
+    #             raise type(e)(str(e) + "\n" + extra)
+    #         else:
+    #             raise e
+    #     return r
+
+    def extract(self, text, pid, mb_time_factor=3, lang='en', **kwargs):
         """
         Make extract call using project determined by pid.
 
@@ -52,20 +132,10 @@ class PoolParty:
         :param lang: language
         :return: response object
         """
-        tmp_file = tempfile.NamedTemporaryFile(delete=False, mode='w+b')
-        tmp_file.write(str(text).encode('utf8'))
-        tmp_file.seek(0)
-        return self.extract_from_file(tmp_file, pid, lang=lang, **kwargs)
-
-    def extract_from_file(self, file, pid, mb_time_factor=3, lang='en',
-                          **kwargs):
-        """
-        Make extract call using project determined by pid.
-
-        :param text: text
-        :param pid: id of project
-        :return: response object
-        """
+        # tmp_file = tempfile.NamedTemporaryFile(delete=False, mode='w+b')
+        # tmp_file.write(str(text).encode('utf8'))
+        # tmp_file.seek(0)
+        # return self.extract_from_file(tmp_file, pid, lang=lang, **kwargs)
         data = {
             'numberOfConcepts': 100000,
             'numberOfTerms': 100000,
@@ -73,35 +143,29 @@ class PoolParty:
             'language': lang,
             'useTransitiveBroaderConcepts': True,
             'useRelatedConcepts': True,
-            # 'sentimentAnalysis': True,
             'filterNestedConcepts': True,
             'showMatchingPosition': True,
-            'showMatchingDetails': True
+            'showMatchingDetails': True,
+            'text': text
         }
         data.update(kwargs)
         target_url = self.server + '/extractor/api/extract'
         start = time()
         try:
-            if not hasattr(file, 'read'):
-                file = open(file, 'rb')
-            file_text = file.read()
             # Findout filesize
-            file.seek(0, 2)  # Go to end of file
-            f_size_mb = file.tell() / (1024 * 1024)
-            file.seek(0)  # Go to start of file
-            countedTimeout = (3.05, int(27 * mb_time_factor * (1 + f_size_mb)))
-            if self.timeout and self.timeout < countedTimeout:
-                countedTimeout = self.timeout
+            # file.seek(0, 2)  # Go to end of file
+            # f_size_mb = file.tell() / (1024 * 1024)
+            # file.seek(0)  # Go to start of file
+            # countedTimeout = (3.05, int(27 * mb_time_factor * (1 + f_size_mb)))
+            # if self.timeout and self.timeout < countedTimeout:
+            #     countedTimeout = self.timeout
             r = self.session.post(
                 target_url,
                 data=data,
-                files={'file': file},
-                timeout=countedTimeout
+                timeout=self.timeout
             )
         except Exception as e:
             module_logger.error(traceback.format_exc())
-        finally:
-            file.close()
         module_logger.debug('call took {:0.3f}'.format(time() - start))
         if not 'r' in locals():
             return None
@@ -109,15 +173,38 @@ class PoolParty:
             r.raise_for_status()
         except Exception as e:
             msg = 'JSON data of the failed POST request: {}\n'.format(data)
-            msg += 'URL of the failed POST request: {}'.format(target_url)
+            msg += 'Text: {}\n'.format(text)
+            msg += 'URL of the failed POST request: {}\n'.format(target_url)
+            msg += '{}'.format(r.content)
             module_logger.error(msg)
             response = r.json()
             if "errorMessage" in response:
-                extra = "API error message: {}\n".format(response["errorMessage"])
+                extra = "API error message: {}\n".format(
+                    response["errorMessage"])
                 raise type(e)(str(e) + "\n" + extra)
             else:
                 raise e
         return r
+
+    def extract_from_file(self, file, pid, lang='en', **kwargs):
+        """
+        Make extract call using project determined by pid.
+
+        :param text: text
+        :param pid: id of project
+        :return: response object
+        """
+        try:
+            if not hasattr(file, 'read'):
+                file = open(file, 'rb')
+            file_text = file.read()
+        except Exception as e:
+            module_logger.error(traceback.format_exc())
+        else:
+            r = self.extract(text=file_text, pid=pid, lang=lang, **kwargs)
+            return r
+        finally:
+            file.close()
 
     @staticmethod
     def get_cpts_from_response(r):
